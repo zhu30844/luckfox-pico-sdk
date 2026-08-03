@@ -25,8 +25,8 @@ export CONFIG_RK_MPP_TESTS=y
 export CONFIG_RK_RKAIQ=y
 # ISP Hardware version
 export CONFIG_RK_ISP_HW_VERSION_V32=y
-# ISP build demo
-export CONFIG_RK_ISP_BUILD_DEMO=y
+# ISP build demo (set to n for product builds; set to y only during camera tuning)
+export CONFIG_RK_ISP_BUILD_DEMO=n
 
 #------------------------------------------------
 # Rockchip's RGA2 (Raster Graphic Acceleration)

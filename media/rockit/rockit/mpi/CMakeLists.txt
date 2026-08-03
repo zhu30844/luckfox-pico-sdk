@@ -37,4 +37,8 @@ set(ROCKIT_DUMPSYS_FILE ${CMAKE_CURRENT_LIST_DIR}/example/bin/bin32/dumpsys)
 endif()
 
 add_subdirectory(sdk)
-add_subdirectory(example)
+
+option(BUILD_EXAMPLES "Build MPI example/test binaries" ON)
+if(BUILD_EXAMPLES)
+    add_subdirectory(example)
+endif()

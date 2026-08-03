@@ -4,7 +4,6 @@ ifeq ($(MEDIA_PARAM), )
     include $(MEDIA_PARAM)
 endif
 
-export CONFIG_LUCKFOX_TEST=y
 export LC_ALL=C
 SHELL:=/bin/bash
 
@@ -30,12 +29,7 @@ ifeq ($(RK_MEDIA_CHIP), rk3588)
 PKG_CONF_OPTS += -DARCH64=ON
 endif
 
-ifeq ($(CONFIG_LUCKFOX_TEST),y)
 PKG_TARGET := luckfox-build
-else
-PKG_TARGET :=
-$(warning Not config source LUCKFOX_TEST, Skip...)
-endif
 
 ifeq ($(PKG_BIN),)
 $(error ### $(CURRENT_DIR): PKG_BIN is NULL, Please Check !!!)
@@ -66,8 +60,10 @@ luckfox-build:
 	@mkdir -p $(LUCKFOX_OUT_DIR)/bin
 	@cp -rfa $(CURRENT_DIR)/include $(LUCKFOX_OUT_DIR)/
 	@make -C $(CURRENT_DIR)/src;
+ifneq ($(RK_ENABLE_LUCKFOX_TEST),n)
 	@make -C $(CURRENT_DIR)/examples;
 	@make -C $(CURRENT_DIR)/examples install;
+endif
 
 clean:
 	@make -C $(CURRENT_DIR)/examples clean

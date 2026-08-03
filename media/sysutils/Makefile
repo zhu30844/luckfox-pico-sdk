@@ -4,7 +4,6 @@ ifeq ($(MEDIA_PARAM), )
     include $(MEDIA_PARAM)
 endif
 
-export CONFIG_RK_SYSUTILS=y
 export LC_ALL=C
 SHELL:=/bin/bash
 
@@ -33,12 +32,7 @@ ifeq ($(RK_MEDIA_CHIP), rk3588)
 PKG_CONF_OPTS += -DRK3588
 endif
 
-ifeq ($(CONFIG_RK_SYSUTILS),y)
 PKG_TARGET := sysutils-build
-else
-PKG_TARGET :=
-$(warning Not config source RK_SYSUTILS, Skip...)
-endif
 
 ifeq ($(PKG_BIN),)
 $(error ### $(CURRENT_DIR): PKG_BIN is NULL, Please Check !!!)
@@ -67,8 +61,10 @@ sysutils-build:
 	@mkdir -p $(SYSUTILS_OUT_DIR)/bin
 	@cp -rfa $(CURRENT_DIR)/include $(SYSUTILS_OUT_DIR)/
 	@make -C $(CURRENT_DIR)/src;
+ifneq ($(RK_ENABLE_SYSUTILS_TESTS),n)
 	@make -C $(CURRENT_DIR)/examples;
 	@make -C $(CURRENT_DIR)/examples install;
+endif
 
 clean:
 	@make -C $(CURRENT_DIR)/examples clean

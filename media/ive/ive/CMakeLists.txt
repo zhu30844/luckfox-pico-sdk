@@ -18,6 +18,9 @@ set(ROCKIVE_DIR ${PROJECT_SOURCE_DIR})
 install(DIRECTORY ${ROCKIVE_DIR}/include/ DESTINATION include/rockive)
 install(DIRECTORY ${ROCKIVE_DIR}/${TARGET_LIB_ARCH}/ DESTINATION lib)
 
+option(BUILD_EXAMPLES "Build IVE example/test binaries" ON)
+if(BUILD_EXAMPLES)
+
 # build sample test
 set(SAMPLE_BIN_NAME rk_rve_sample_test)
 
@@ -43,3 +46,5 @@ find_library(LIBROCKIT_LIBRARY
 add_executable(${SAMPLE_BIN_NAME} ${SAMPLE_SRCS})
 target_link_libraries(${SAMPLE_BIN_NAME} rockit ${LIBRVE_LIBRARY})
 install(PROGRAMS ${PROJECT_BINARY_DIR}/${SAMPLE_BIN_NAME} DESTINATION bin)
+
+endif() # BUILD_EXAMPLES
