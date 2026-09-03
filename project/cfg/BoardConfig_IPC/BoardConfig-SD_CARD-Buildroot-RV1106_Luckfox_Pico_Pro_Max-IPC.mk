@@ -3,7 +3,7 @@
 #################################################
 # 	Board Config
 #################################################
-export LF_ORIGIN_BOARD_CONFIG=BoardConfig-SD_CARD-Buildroot-RV1106_Luckfox_Pico_Max-IPC.mk
+export LF_ORIGIN_BOARD_CONFIG=BoardConfig-SD_CARD-Buildroot-RV1106_Luckfox_Pico_Pro_Max-IPC.mk
 # Target CHIP
 export RK_CHIP=rv1106
 

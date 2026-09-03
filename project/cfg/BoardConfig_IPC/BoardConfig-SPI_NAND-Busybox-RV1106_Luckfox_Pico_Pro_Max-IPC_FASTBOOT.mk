@@ -3,7 +3,7 @@
 #################################################
 # 	Board Config
 #################################################
-export LF_ORIGIN_BOARD_CONFIG=BoardConfig-SPI_NAND-Busybox-RV1106_Luckfox_Pico_Ultra-IPC_FASTBOOT.mk
+export LF_ORIGIN_BOARD_CONFIG=BoardConfig-SPI_NAND-Busybox-RV1106_Luckfox_Pico_Pro_Max-IPC_FASTBOOT.mk
 
 # Target CHIP
 export RK_CHIP=rv1106
