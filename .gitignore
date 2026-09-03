@@ -11,6 +11,4 @@ sysdrv/tools/board/dosfstools/dosfstools-4.2/
 dl/
 buildroot_dl/
 .claude/
-.devcontainer/
-setenv-buildroot-dl.sh
 .buildroot-ccache

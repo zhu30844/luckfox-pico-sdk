@@ -1,0 +1,43 @@
+{
+    "name": "LuckfoxPico-MotionSense",
+    "build": {
+        "dockerfile": "Dockerfile",
+        // Locale, timezone and Go version. Changing any of these needs a
+        // "Dev Containers: Rebuild Container" to take effect.
+        "args": {
+            "LANG": "C.UTF-8",
+            "TZ": "Australia/Perth",
+            "GO_VERSION": "1.27.1"
+        }
+    },
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.shell.linux": "/bin/bash"
+            },
+            "extensions": [ "Erol444.adb-files",
+                            "ms-vscode.cpptools",
+                            "ms-vscode.cpptools-extension-pack",
+                            "ms-vscode.makefile-tools",
+                            "ms-vscode.cmake-tools",
+                            "ms-vscode.cpptools-themes",
+                            "golang.go",
+                            "Anthropic.claude-code",
+                            "google.geminicodeassist"]
+        }
+    },
+    "runArgs": ["--privileged",
+                "-v","/dev:/dev"
+            ],
+    // Paths are derived from ${containerWorkspaceFolder} so renaming the
+    // repo directory cannot desync them. LF_ matches the prefix the SDK's
+    // own board configs use.
+    "containerEnv": {
+        "LF_SDK": "${containerWorkspaceFolder}",
+        "LF_TOOLCHAIN": "${containerWorkspaceFolder}/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf",
+        "LF_SYSROOT": "${containerWorkspaceFolder}/sysdrv/source/buildroot/buildroot-2023.02.6/output/host/arm-buildroot-linux-uclibcgnueabihf/sysroot",
+        "LF_INCLUDE": "${containerWorkspaceFolder}/sysdrv/source/buildroot/buildroot-2023.02.6/output/host/arm-buildroot-linux-uclibcgnueabihf/sysroot/usr/include",
+        "LF_LIB": "${containerWorkspaceFolder}/sysdrv/source/buildroot/buildroot-2023.02.6/output/host/arm-buildroot-linux-uclibcgnueabihf/sysroot/usr/lib"
+    },
+    "postCreateCommand": "echo 'export PATH=$LF_TOOLCHAIN/bin:$PATH' >> ~/.bashrc"
+}
