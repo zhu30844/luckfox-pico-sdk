@@ -42,7 +42,7 @@ export RK_PARTITION_FS_TYPE_CFG=rootfs@IGNORE@ubifs,oem@/oem@ubifs,userdata@/use
 #	ROOTFS
 #################################################
 export LF_TARGET_ROOTFS=buildroot
-export RK_BUILDROOT_DEFCONFIG=luckfox_pico_defconfig
+export RK_BUILDROOT_DEFCONFIG=motionsense_defconfig
 
 export RK_ARCH=arm
 export RK_TOOLCHAIN_CROSS=arm-rockchip830-linux-uclibcgnueabihf
