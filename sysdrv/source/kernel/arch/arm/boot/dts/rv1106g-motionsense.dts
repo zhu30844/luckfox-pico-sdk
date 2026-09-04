@@ -52,7 +52,22 @@
 
 	//sdio
 	cap-sdio-irq;
-	non-removable;
+	/*
+	 * non-removable is deliberately not set, unlike the vendor dts.
+	 *
+	 * That property comes from the reference design, where this slot holds
+	 * an SDIO wifi module. Here it holds a removable SD card that the
+	 * recordings live on, so card-detect has to be live: with
+	 * non-removable the core scans once at probe, ignores the CD pin, and
+	 * never retries.
+	 *
+	 * That is not theoretical. On this board the card times out at the
+	 * first probe frequency and only answers on the retry:
+	 *   400kHz -> error -110 whilst initialising SD card
+	 *   300kHz -> new high speed SDXC card at address 59b4
+	 * With non-removable, a boot-time failure was permanent and reseating
+	 * the card produced no event at all.
+	 */
 	no-1-8-v;
 	supports-sdio;
 
