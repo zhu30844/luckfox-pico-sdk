@@ -65,6 +65,33 @@ function remove_data()
 
     # ISP tuning tool server (development only, not needed in product)
     lf_rm $RK_PROJECT_PACKAGE_OEM_DIR/usr/bin/rkaiq_tool_server
+
+    # The stock IPC application. MotionSense replaces it, and leaving it in the
+    # image is not merely wasteful:
+    #
+    #   [network.ntp]
+    #   enable = 1
+    #   refresh_time_s = 60
+    #   ntp_server = 119.28.183.184
+    #
+    # rkipc carries its own NTP client, enabled by default, pointed at a server
+    # this product has no reason to talk to. It applies the timezone offset to
+    # the UTC it gets back and then shells out to busybox to write the result as
+    # if it were UTC, so the clock lands a full offset ahead -- eight hours here
+    # -- and stays there, because nothing else on this image corrects it.
+    #
+    # S99motionsense already calls RkLunch-stop.sh, but that cannot win: RkLunch
+    # starts rkipc from post_chk, which it backgrounds, and post_chk first waits
+    # for /userdata and loads modules. rkipc therefore appears a minute or two
+    # into the boot, long after the stop call has run against a process that did
+    # not exist yet.
+    #
+    # Removing the inis as well as the binary makes post_chk exit at its own
+    # "not found rkipc.ini" check, which is after insmod_ko.sh (still needed)
+    # and before the audio test and the camera. iqfiles stays: /etc/iqfiles is a
+    # symlink to it and the daemon reads it through CFG_ISP_IQ_DIR.
+    lf_rm $RK_PROJECT_PACKAGE_OEM_DIR/usr/bin/rkipc
+    lf_rm $RK_PROJECT_PACKAGE_OEM_DIR/usr/share/rkipc-*.ini
 }
 
 #=========================
