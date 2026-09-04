@@ -1,0 +1,3 @@
+[submodule "project/app/motionsense"]
+	path = project/app/motionsense
+	url = git@github.com:zhu30844/MotionSense.git
