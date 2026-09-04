@@ -6,6 +6,14 @@ DAEMON="$BIN_DIR/MotionSense"
 PIDFILE="/var/run/motionsense.pid"
 LOGFILE="/mnt/sdcard/MotionSense/motionsense.log"
 
+# Go agent: HTTP UI/API on :5000, reads frames from the C daemon over
+# /tmp/motionsense.sock. Start order does not matter — it retries the socket
+# and treats a missing database as non-fatal — but it is started second so
+# its log does not interleave with the camera handover above.
+AGENT="$BIN_DIR/motionsense-agent"
+AGENT_PIDFILE="/var/run/motionsense-agent.pid"
+AGENT_LOGFILE="/mnt/sdcard/MotionSense/agent.log"
+
 case "$1" in
     start)
         # Hand the camera over from the stock rkipc app: this kills rkipc and
@@ -31,15 +39,20 @@ case "$1" in
         # No LD_LIBRARY_PATH: the SDK build links the binary with
         # RPATH $ORIGIN/../lib, which resolves to $LIB_DIR from $BIN_DIR.
         start-stop-daemon -S -b -m -p "$PIDFILE" -x /bin/sh -- -c "exec $DAEMON 2>>$LOGFILE"
+        if [ -x "$AGENT" ]; then
+            start-stop-daemon -S -b -m -p "$AGENT_PIDFILE" -x /bin/sh -- -c "exec $AGENT >>$AGENT_LOGFILE 2>&1"
+        fi
         ;;
     stop)
+        start-stop-daemon -K -q -p "$AGENT_PIDFILE" && rm -f "$AGENT_PIDFILE"
         start-stop-daemon -K -p "$PIDFILE" && rm -f "$PIDFILE"
         ;;
     restart)
         $0 stop; sleep 1; $0 start
         ;;
     status)
-        start-stop-daemon -K -t -q -p "$PIDFILE" && echo "running" || echo "stopped"
+        start-stop-daemon -K -t -q -p "$PIDFILE" && echo "MotionSense: running" || echo "MotionSense: stopped"
+        start-stop-daemon -K -t -q -p "$AGENT_PIDFILE" && echo "agent: running" || echo "agent: stopped"
         ;;
     *)
         echo "Usage: $0 {start|stop|restart|status}"
