@@ -16,7 +16,6 @@ BR2_PRIMARY_SITE="http://sources.buildroot.net"
 BR2_OPTIMIZE_3=y
 BR2_DL_DIR="../../../../dl"
 BR2_CCACHE=y
-BR2_JLEVEL=4
 BR2_CCACHE_DIR="../../../../.buildroot-ccache"
 BR2_TARGET_GENERIC_HOSTNAME="luckfox pico"
 BR2_TARGET_GENERIC_ISSUE="Welcome to luckfox pico"
@@ -82,6 +81,7 @@ BR2_PACKAGE_NANO=y
 BR2_PACKAGE_HOST_DTC=y
 
 # --- declared by MotionSense ---
-BR2_PACKAGE_LIBYAML=y
-BR2_PACKAGE_SQLITE=y
+BR2_PACKAGE_LIBYAML=y   # libyaml-0.so.2   -> yaml::yaml
+BR2_PACKAGE_SQLITE=y    # libsqlite3.so.0  -> sqlite3::sqlite3
+BR2_JLEVEL=0
 # BR2_PACKAGE_NTP is not set
