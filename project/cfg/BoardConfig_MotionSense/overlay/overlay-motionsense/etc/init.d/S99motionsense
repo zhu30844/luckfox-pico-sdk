@@ -36,9 +36,12 @@ case "$1" in
         # fails in the shell *before* exec, so MotionSense never starts and logs
         # nothing (this is what silently broke boot autostart when config was absent).
         mkdir -p "$(dirname "$LOGFILE")"
-        # No LD_LIBRARY_PATH: the SDK build links the binary with
-        # RPATH $ORIGIN/../lib, which resolves to $LIB_DIR from $BIN_DIR.
-        start-stop-daemon -S -b -m -p "$PIDFILE" -x /bin/sh -- -c "exec $DAEMON 2>>$LOGFILE"
+        # LD_LIBRARY_PATH is required despite the binary's RPATH. The RPATH
+        # ($ORIGIN/../lib) does resolve the daemon's own NEEDED entries, but
+        # librockit.so in turn needs librockchip_mpp.so.1 and librga.so, and
+        # resolving *its* dependencies does not consult the executable's
+        # RPATH, so those come up "not found" and the daemon dies at exec.
+        start-stop-daemon -S -b -m -p "$PIDFILE" -x /bin/sh -- -c "exec env LD_LIBRARY_PATH=$LIB_DIR $DAEMON 2>>$LOGFILE"
         if [ -x "$AGENT" ]; then
             start-stop-daemon -S -b -m -p "$AGENT_PIDFILE" -x /bin/sh -- -c "exec $AGENT >>$AGENT_LOGFILE 2>&1"
         fi
