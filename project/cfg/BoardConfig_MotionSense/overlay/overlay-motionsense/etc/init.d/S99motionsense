@@ -14,6 +14,10 @@ AGENT="$BIN_DIR/motionsense-agent"
 AGENT_PIDFILE="/var/run/motionsense-agent.pid"
 AGENT_LOGFILE="/mnt/sdcard/MotionSense/agent.log"
 
+# Seeded to the SD card on first boot; the daemon reads CONFIG, not the seed.
+CONFIG="/mnt/sdcard/MotionSense/config.yaml"
+CONFIG_SEED="/oem/usr/share/MotionSense/config.yaml"
+
 case "$1" in
     start)
         # Hand the camera over from the stock rkipc app: this kills rkipc and
@@ -36,6 +40,12 @@ case "$1" in
         # fails in the shell *before* exec, so MotionSense never starts and logs
         # nothing (this is what silently broke boot autostart when config was absent).
         mkdir -p "$(dirname "$LOGFILE")"
+        # Seed config.yaml on first run. Without it the daemon falls back to
+        # its compiled-in defaults, which works but leaves nothing to edit.
+        # Never overwrite: this is the copy the user tunes.
+        if [ ! -f "$CONFIG" ] && [ -f "$CONFIG_SEED" ]; then
+            cp "$CONFIG_SEED" "$CONFIG"
+        fi
         # LD_LIBRARY_PATH is required despite the binary's RPATH. The RPATH
         # ($ORIGIN/../lib) does resolve the daemon's own NEEDED entries, but
         # librockit.so in turn needs librockchip_mpp.so.1 and librga.so, and
