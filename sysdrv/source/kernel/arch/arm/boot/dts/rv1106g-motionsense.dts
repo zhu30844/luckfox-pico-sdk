@@ -1,0 +1,91 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * MotionSense — Luckfox Pico Pro Max carrier.
+ *
+ * Hardware is the stock Pro Max, so this only includes the vendor dtsi and
+ * overrides what this product needs. Keeping it as a separate file means the
+ * vendor's rv1106g-luckfox-pico-pro-max.dts never has to be edited, so
+ * syncing upstream cannot conflict.
+ *
+ * Adding a .dts here needs no Makefile change: the kernel is built with
+ * `make <name>.img`, which resolves through the generic %.dtb pattern rule.
+ * None of the vendor luckfox dts files are listed in the dts Makefile either.
+ */
+
+/dts-v1/;
+
+#include "rv1106.dtsi"
+#include "rv1106-evb.dtsi"
+#include "rv1106-luckfox-pico-pro-max-ipc.dtsi"
+
+/ {
+	model = "MotionSense (Luckfox Pico Pro Max)";
+	compatible = "rockchip,rv1103g-38x38-ipc-v10", "rockchip,rv1106g3";
+};
+
+/**********FLASH**********/
+&sfc {
+	status = "okay";
+	flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-max-frequency = <75000000>;
+		spi-rx-bus-width = <4>;
+		spi-tx-bus-width = <1>;
+	};
+};
+
+/**********SDMMC**********/
+/*
+ * The vendor Pro Max dts spells this property "max-freqency", so it is
+ * ignored and the controller inherits max-frequency = <200000000> from
+ * rv1106.dtsi. Spelled correctly here. no-1-8-v keeps SD/SDIO at 50MHz
+ * regardless, so this is about the property doing what it says.
+ */
+&sdmmc {
+	max-frequency = <50000000>;
+	no-mmc;
+	bus-width = <4>;
+	cap-mmc-highspeed;
+	cap-sd-highspeed;
+	disable-wp;
+
+	//sdio
+	cap-sdio-irq;
+	non-removable;
+	no-1-8-v;
+	supports-sdio;
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdmmc0_clk &sdmmc0_cmd &sdmmc0_det &sdmmc0_bus4>;
+	status = "okay";
+};
+
+/**********ETH**********/
+&gmac {
+	status = "okay";
+};
+
+/**********USB**********/
+&u2phy {
+	status = "okay";
+};
+
+&u2phy_otg {
+	rockchip,dis-u2-susphy;
+	status = "okay";
+};
+
+&usbdrd {
+	status = "okay";
+};
+
+&usbdrd_dwc3 {
+	status = "okay";
+	dr_mode = "peripheral";
+};
+
+/**********RTC**********/
+&rtc {
+	status = "okay";
+};

@@ -1,0 +1,1 @@
+../BoardConfig_IPC/luckfox-userdata-pre.sh
