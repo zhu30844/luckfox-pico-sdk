@@ -84,4 +84,5 @@ BR2_PACKAGE_HOST_DTC=y
 BR2_PACKAGE_LIBYAML=y   # libyaml-0.so.2   -> yaml::yaml
 BR2_PACKAGE_SQLITE=y    # libsqlite3.so.0  -> sqlite3::sqlite3
 BR2_JLEVEL=0
+BR2_PER_PACKAGE_DIRECTORIES=y
 # BR2_PACKAGE_NTP is not set

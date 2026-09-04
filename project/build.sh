@@ -45,7 +45,16 @@ UBOOT_PATH=${SDK_SYSDRV_DIR}/source/uboot/u-boot
 #for custom rootfs
 CUSTOM_ROOT=${SDK_ROOT_DIR}/custom_root
 
-export RK_JOBS=$(($(getconf _NPROCESSORS_ONLN) * 3 / 4))
+# Three quarters of the host by default, so a build leaves something for the
+# rest of the machine. This is the only job count buildroot ever sees: it
+# defers to the jobserver instead of reading BR2_JLEVEL once MAKEFLAGS carries
+# a -j, and sysdrv/Makefile always passes one.
+#
+# The override is LF_JOBS rather than RK_JOBS because unset_env_config_rk, a
+# few lines up, blanks every RK_* it finds in the environment -- the SDK's way
+# of keeping the board config authoritative. An RK_JOBS from the caller is
+# already empty by the time this line runs.
+export RK_JOBS=${LF_JOBS:-$(($(getconf _NPROCESSORS_ONLN) * 3 / 4))}
 export RK_BUILD_VERSION_TYPE=RELEASE
 
 export SDK_ROOT_DIR=$SDK_ROOT_DIR
