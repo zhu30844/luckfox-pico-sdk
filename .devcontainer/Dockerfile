@@ -10,7 +10,7 @@ LABEL maintainer="zhu30844" \
 # ---------------------------------------------------------------------------
 ARG LANG=C.UTF-8
 ARG TZ=Etc/UTC
-ARG GO_VERSION=1.27.1
+ARG GO_VERSION=1.27.3
 
 # Build-time only, deliberately ARG and not ENV: keeps apt quiet during the
 # build without leaking noninteractive into the running container's shell.

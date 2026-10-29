@@ -7,7 +7,7 @@
         "args": {
             "LANG": "C.UTF-8",
             "TZ": "Australia/Perth",
-            "GO_VERSION": "1.27.1"
+            "GO_VERSION": "1.27.3"
         }
     },
     "customizations": {
