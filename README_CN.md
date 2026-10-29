@@ -1,3 +1,38 @@
+# 关于这个 fork
+
+这是 `zhu30844/luckfox-pico-sdk`：Luckfox Pico SDK（上游 V1.4，提交 `824b817f8`）
+加上一个产品 [MotionSense](project/app/motionsense/README_cn.md)，一个面向
+Luckfox Pico Pro Max（RV1106）的运动触发录像程序。本节之下是未改动的上游 README。
+
+**哪些是我们的，放在哪里**
+
+| 路径 | 是什么 |
+|---|---|
+| `project/app/motionsense/` | 应用本身（git submodule，内部再嵌一层 media-server）。它的 `docs/BUILD_cn.md` 是构建和板级配置的权威参考。 |
+| `project/cfg/BoardConfig_MotionSense/` | 板级配置：分区表、oem 裁剪，以及打进 `/etc/init.d/S99motionsense` 的 `overlay-motionsense`。不在 `lunch` 的编号菜单里，通过 `custom` 选择。 |
+| `sysdrv/source/kernel/arch/arm/boot/dts/rv1106g-motionsense.dts` | 设备树。include vendor 的 Pro Max dtsi，只覆盖不同之处。 |
+| `sysdrv/tools/board/buildroot/motionsense_defconfig` | 这块板用的 buildroot 配置。`BR2_DL_DIR=dl/` 和 `BR2_CCACHE_DIR=.buildroot-ccache/`（都在 SDK 根目录，都已 gitignore）是我们加的，不是上游默认。 |
+| `.devcontainer/` | 容器构建用的工具链、Go 和 `LF_*` 变量。 |
+
+有少数 vendor 文件是原地修改的，因为它们是读取构建开关的地方而不是声明开关的地方；
+清单以及每一项为什么迁不出去，见
+[BUILD_cn.md → 无法迁出的上游改动](project/app/motionsense/docs/BUILD_cn.md#无法迁出的上游改动)。
+查看对 SDK 的全部改动：`git log 824b817f8..HEAD --grep=Bump --invert-grep`。
+
+**构建与烧录**
+
+```shell
+git clone --recurse-submodules git@github.com:zhu30844/luckfox-pico-sdk.git
+printf '9\n15\n' | ./build.sh lunch     # 硬件选 "custom" -> MotionSense
+./build.sh                              # 冷构建约 20 分钟，热构建几分钟
+adb reboot loader && ./rkflash.sh update
+```
+
+`upgrade_tool` 在部分主机上会段错误，在 devcontainer 里（`--privileged -v /dev:/dev`）
+可以正常烧录。细节、SD 卡要求和日常工作流见 `project/app/motionsense/docs/`。
+
+---
+
 ![luckfox](https://github.com/LuckfoxTECH/luckfox-pico/assets/144299491/cec5c4a5-22b9-4a9a-abb1-704b11651e88)
 # Luckfox Pico SDK
 [English Version](./README.md)

@@ -1,3 +1,40 @@
+# About this fork
+
+This is `zhu30844/luckfox-pico-sdk`: the Luckfox Pico SDK (upstream V1.4,
+commit `824b817f8`) carrying one product, [MotionSense](project/app/motionsense/README.md),
+a motion-triggered recorder for the Luckfox Pico Pro Max (RV1106). The upstream
+README follows unchanged below this section.
+
+**What is ours, and where it lives**
+
+| Path | What it is |
+|---|---|
+| `project/app/motionsense/` | The application (git submodule, nested one more level for media-server). Its `docs/BUILD.md` is the authoritative build and board reference. |
+| `project/cfg/BoardConfig_MotionSense/` | The board config: partition table, oem trimming, and the `overlay-motionsense` that ships `/etc/init.d/S99motionsense`. Not in the numbered `lunch` menu; pick it through `custom`. |
+| `sysdrv/source/kernel/arch/arm/boot/dts/rv1106g-motionsense.dts` | Device tree. Includes the vendor Pro Max dtsi and overrides only the deltas. |
+| `sysdrv/tools/board/buildroot/motionsense_defconfig` | The buildroot config this board uses. `BR2_DL_DIR=dl/` and `BR2_CCACHE_DIR=.buildroot-ccache/` (both at the SDK root, both gitignored) are ours, not upstream defaults. |
+| `.devcontainer/` | Toolchain, Go and `LF_*` variables for a container build. |
+
+A handful of vendor files are modified in place because they are where build
+switches are read rather than declared; the list, and why each cannot be moved,
+is in [BUILD.md → Upstream deltas that cannot be moved](project/app/motionsense/docs/BUILD.md#upstream-deltas-that-cannot-be-moved).
+For the full set of SDK changes: `git log 824b817f8..HEAD --grep=Bump --invert-grep`.
+
+**Build and flash**
+
+```shell
+git clone --recurse-submodules git@github.com:zhu30844/luckfox-pico-sdk.git
+printf '9\n15\n' | ./build.sh lunch     # hardware "custom" -> MotionSense
+./build.sh                              # ~20 min cold, minutes warm
+adb reboot loader && ./rkflash.sh update
+```
+
+`upgrade_tool` segfaults on some hosts; it works inside the devcontainer
+(`--privileged -v /dev:/dev`). Details, the SD card requirements and the
+day-to-day workflow are in `project/app/motionsense/docs/`.
+
+---
+
 ![luckfox](https://github.com/LuckfoxTECH/luckfox-pico/assets/144299491/cec5c4a5-22b9-4a9a-abb1-704b11651e88)
 # Luckfox Pico SDK
 [中文版](./README_CN.md)
