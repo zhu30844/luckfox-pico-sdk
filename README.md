@@ -29,6 +29,9 @@ printf '9\n15\n' | ./build.sh lunch     # hardware "custom" -> MotionSense
 adb reboot loader && ./rkflash.sh update
 ```
 
+A release is a tag: push `motionsense-vX.Y.Z` and `.github/workflows/release.yml` builds the
+firmware in the devcontainer image and publishes it as `vX.Y.Z` on the MotionSense repository.
+
 `upgrade_tool` segfaults on some hosts; it works inside the devcontainer
 (`--privileged -v /dev:/dev`). Details, the SD card requirements and the
 day-to-day workflow are in `project/app/motionsense/docs/`.

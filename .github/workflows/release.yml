@@ -1,0 +1,164 @@
+# Build the firmware for every board in the matrix and, on a release tag,
+# publish the bundles to the MotionSense repository.
+#
+# Trigger:  push a tag  motionsense-vX.Y.Z  to this repository (the SDK fork).
+#           The MotionSense release is named vX.Y.Z and its tag is created on
+#           the submodule commit this SDK commit points at.
+#           workflow_dispatch builds without publishing, for trying changes.
+#
+# Secret:   MOTIONSENSE_RELEASE_TOKEN, a fine-grained token with
+#           "Contents: read and write" on zhu30844/MotionSense only. Needed
+#           because GITHUB_TOKEN cannot write to another repository.
+#
+# Environment: the build runs inside the image from .devcontainer/Dockerfile,
+# so CI and a local container build are the same toolchain, Go and cmake.
+# The image is built here with the GitHub Actions layer cache, which makes
+# it a ~30 s step after the first run.
+#
+# Caches:   dl/ (buildroot tarballs, keyed on the defconfigs) and
+#           .buildroot-ccache (keyed per board, restored from the newest).
+#           Both resolve relative to the SDK root; see motionsense_defconfig.
+
+name: Release
+
+on:
+  push:
+    tags: ['motionsense-v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: luckfox-pico-sdk-dev:ci
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        # One line per board. `board` is the directory under project/cfg/,
+        # which must hold exactly one BoardConfig*.mk; `slug` names the
+        # bundle. Keep slug in step with slug_for() in
+        # project/app/motionsense/scripts/mk-release.sh.
+        include:
+          - board: BoardConfig_MotionSense
+            slug: luckfox-pico-pro-max
+    steps:
+      - name: Free disk space
+        # buildroot's output tree is ~20 GB; the hosted runner has ~14 GB
+        # free until the preinstalled SDKs we do not use are removed.
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+                      /usr/local/.ghcup /opt/hostedtoolcache/CodeQL /usr/share/swift
+          sudo docker image prune -af >/dev/null
+          df -h / | tail -1
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Version
+        id: ver
+        run: |
+          case "$GITHUB_REF" in
+            refs/tags/motionsense-v*) v=${GITHUB_REF#refs/tags/motionsense-} ;;
+            *) v=dev-$(git rev-parse --short HEAD) ;;
+          esac
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "go=$(sed -n 's/.*"GO_VERSION": *"\([^"]*\)".*/\1/p' .devcontainer/devcontainer.json)" >> "$GITHUB_OUTPUT"
+          echo "app_sha=$(git rev-parse HEAD:project/app/motionsense)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build toolchain image
+        uses: docker/build-push-action@v6
+        with:
+          context: .devcontainer
+          load: true
+          tags: ${{ env.IMAGE }}
+          build-args: |
+            GO_VERSION=${{ steps.ver.outputs.go }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Cache buildroot downloads
+        uses: actions/cache@v4
+        with:
+          path: dl
+          key: br-dl-${{ hashFiles('sysdrv/tools/board/buildroot/*_defconfig') }}
+          restore-keys: br-dl-
+
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: .buildroot-ccache
+          key: br-ccache-${{ matrix.board }}-${{ github.sha }}
+          restore-keys: br-ccache-${{ matrix.board }}-
+
+      - name: Select board
+        run: |
+          set -e
+          cfgs=(project/cfg/${{ matrix.board }}/BoardConfig*.mk)
+          [ ${#cfgs[@]} -eq 1 ] || { echo "expected one BoardConfig*.mk in ${{ matrix.board }}, found ${#cfgs[@]}"; exit 1; }
+          ln -rfs "${cfgs[0]}" .BoardConfig.mk
+          echo "building $(readlink .BoardConfig.mk)"
+
+      - name: Build firmware
+        run: |
+          docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/sdk" -w /sdk \
+            -e HOME=/tmp -e LF_JOBS="$(nproc)" "$IMAGE" ./build.sh
+
+      - name: Assemble release bundle
+        run: |
+          docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/sdk" -w /sdk -e HOME=/tmp "$IMAGE" \
+            project/app/motionsense/scripts/mk-release.sh \
+              --board "${{ matrix.board }}" --slug "${{ matrix.slug }}" \
+              --version "${{ steps.ver.outputs.version }}" --out /sdk/output/release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bundle-${{ matrix.slug }}
+          path: |
+            output/release/*.zip
+            output/release/*.zip.sha256
+          if-no-files-found: error
+          retention-days: 14
+
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+      app_sha: ${{ steps.ver.outputs.app_sha }}
+
+  publish:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/motionsense-v')
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.MOTIONSENSE_RELEASE_TOKEN }}
+      VERSION: ${{ needs.build.outputs.version }}
+      APP_SHA: ${{ needs.build.outputs.app_sha }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: bundle-*
+          merge-multiple: true
+          path: bundles
+
+      - name: Create release on zhu30844/MotionSense
+        run: |
+          set -e
+          ls -la bundles
+          cat > notes.md <<NOTES
+          Firmware images for MotionSense $VERSION. Each zip holds the flashable
+          \`update.img\`, the individual partitions, licences, and a SOURCES.md
+          naming the exact revisions.
+
+          Built from zhu30844/luckfox-pico-sdk @ ${GITHUB_SHA} (tag \`${GITHUB_REF_NAME}\`),
+          MotionSense @ ${APP_SHA}.
+          NOTES
+          gh release create "$VERSION" bundles/* \
+            --repo zhu30844/MotionSense --target "$APP_SHA" \
+            --title "MotionSense $VERSION" --notes-file notes.md

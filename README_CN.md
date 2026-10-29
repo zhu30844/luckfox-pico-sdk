@@ -28,6 +28,9 @@ printf '9\n15\n' | ./build.sh lunch     # 硬件选 "custom" -> MotionSense
 adb reboot loader && ./rkflash.sh update
 ```
 
+发布就是打 tag：推送 `motionsense-vX.Y.Z`，`.github/workflows/release.yml` 会在 devcontainer 镜像里构建固件，
+并以 `vX.Y.Z` 发布到 MotionSense 仓库。
+
 `upgrade_tool` 在部分主机上会段错误，在 devcontainer 里（`--privileged -v /dev:/dev`）
 可以正常烧录。细节、SD 卡要求和日常工作流见 `project/app/motionsense/docs/`。
 
