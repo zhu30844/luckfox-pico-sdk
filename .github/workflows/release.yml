@@ -148,17 +148,36 @@ jobs:
           path: bundles
 
       - name: Create release on zhu30844/MotionSense
+        # Body and draft state follow the version and the app repository:
+        #   docs/releases/<version>.md exists at APP_SHA -> that text, published
+        #   else patch version (vX.Y.Z, Z>0)             -> generated notes, published
+        #   else minor/major (vX.Y.0)                    -> generated notes, DRAFT
+        # A draft creates no tag; GitHub places it on --target when published.
         run: |
           set -e
           ls -la bundles
-          cat > notes.md <<NOTES
-          Firmware images for MotionSense $VERSION. Each zip holds the flashable
-          \`update.img\`, the individual partitions, licences, and a SOURCES.md
-          naming the exact revisions.
+          cat > footer.md <<FOOTER
 
+          ---
           Built from zhu30844/luckfox-pico-sdk @ ${GITHUB_SHA} (tag \`${GITHUB_REF_NAME}\`),
-          MotionSense @ ${APP_SHA}.
-          NOTES
+          MotionSense @ ${APP_SHA}. Each zip holds the flashable \`update.img\`, the
+          individual partitions, licences, and a SOURCES.md naming these revisions.
+          FOOTER
+
+          flags=()
+          if gh api "repos/zhu30844/MotionSense/contents/docs/releases/${VERSION}.md?ref=${APP_SHA}" \
+                -H 'Accept: application/vnd.github.raw' > notes.md 2>/dev/null; then
+            echo "using docs/releases/${VERSION}.md"
+            cat footer.md >> notes.md
+            flags+=(--notes-file notes.md)
+          else
+            echo "no docs/releases/${VERSION}.md; generating notes"
+            flags+=(--generate-notes --notes-file footer.md)
+            case "$VERSION" in
+              v*.*.0) echo "minor/major without notes: creating a draft"; flags+=(--draft) ;;
+            esac
+          fi
+
           gh release create "$VERSION" bundles/* \
             --repo zhu30844/MotionSense --target "$APP_SHA" \
-            --title "MotionSense $VERSION" --notes-file notes.md
+            --title "MotionSense $VERSION" "${flags[@]}"
