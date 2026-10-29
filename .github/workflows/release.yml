@@ -156,9 +156,9 @@ jobs:
         run: |
           set -e
           ls -la bundles
+          # With --generate-notes GitHub puts this text ABOVE the generated list,
+          # so it has no leading rule; the notes-file path adds one itself.
           cat > footer.md <<FOOTER
-
-          ---
           Built from zhu30844/luckfox-pico-sdk @ ${GITHUB_SHA} (tag \`${GITHUB_REF_NAME}\`),
           MotionSense @ ${APP_SHA}. Each zip holds the flashable \`update.img\`, the
           individual partitions, licences, and a SOURCES.md naming these revisions.
@@ -168,6 +168,7 @@ jobs:
           if gh api "repos/zhu30844/MotionSense/contents/docs/releases/${VERSION}.md?ref=${APP_SHA}" \
                 -H 'Accept: application/vnd.github.raw' > notes.md 2>/dev/null; then
             echo "using docs/releases/${VERSION}.md"
+            printf '\n---\n' >> notes.md
             cat footer.md >> notes.md
             flags+=(--notes-file notes.md)
           else
