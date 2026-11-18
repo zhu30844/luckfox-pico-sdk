@@ -18,7 +18,14 @@
     "customizations": {
         "vscode": {
             "settings": {
-                "terminal.integrated.shell.linux": "/bin/bash"
+                "terminal.integrated.shell.linux": "/bin/bash",
+                // Nothing in here serves the host: the board is reached
+                // outward (adb, ssh). The only listeners are VS Code's and
+                // extensions' own, on ports that change every session, so
+                // auto-forward plus restore piled up dozens of dead entries.
+                // Forward by hand from the Ports panel when needed.
+                "remote.autoForwardPorts": false,
+                "remote.restoreForwardedPorts": false
             },
             "extensions": [ "Erol444.adb-files",
                             "ms-vscode.cpptools",
