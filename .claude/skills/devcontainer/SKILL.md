@@ -29,6 +29,12 @@ grep ' /workspaces/luckfox-pico-sdk ' /proc/self/mountinfo
   devices appear.
 - Network to the board (ssh, scp, `adb connect`).
 - git, including push: SSH goes through the agent VS Code forwards.
+- gh (GitHub CLI, from a devcontainer feature, so not in the CI image).
+  VS Code does not forward its token; the login lives in `GH_CONFIG_DIR`
+  (`/home/dev/.gh`, bind-mounted from the host's `~/.MotionSense-identity/gh`;
+  `/home/dev/.claude` comes from `~/.MotionSense-identity/claude`) and
+  survives rebuilds. Not logged in (`gh auth status` fails): ask the user to
+  run `gh auth login` in a container terminal; it is interactive.
 
 ## Hand to the user
 

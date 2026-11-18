@@ -10,6 +10,11 @@
             "GO_VERSION": "1.27.3"
         }
     },
+    // GitHub CLI. A feature rather than a Dockerfile line: CI builds that
+    // Dockerfile directly and does not need gh.
+    "features": {
+        "ghcr.io/devcontainers/features/github-cli:1": {}
+    },
     "customizations": {
         "vscode": {
             "settings": {
@@ -33,12 +38,16 @@
     "runArgs": ["--privileged",
                 "-v","/dev:/dev"
             ],
-    // Keep the Claude Code login across rebuilds. The host dir is created
-    // first, as the host user: if the source were missing, Docker would
-    // create it as root.
-    "initializeCommand": "mkdir -p \"${localEnv:HOME}/.claude-MotionSense\"",
+    // Keep the Claude Code and gh logins across rebuilds, both under one host
+    // dir. The host dirs are created first, as the host user: if a source
+    // were missing, Docker would create it as root. VS Code forwards the SSH
+    // agent but not gh's token, so gh needs its own dir; not the host's
+    // ~/.config/gh, whose token usually sits in the host keyring rather than
+    // in the file.
+    "initializeCommand": "mkdir -p \"${localEnv:HOME}/.MotionSense-identity/claude\" \"${localEnv:HOME}/.MotionSense-identity/gh\"",
     "mounts": [
-        "source=${localEnv:HOME}/.claude-MotionSense,target=/home/dev/.claude,type=bind"
+        "source=${localEnv:HOME}/.MotionSense-identity/claude,target=/home/dev/.claude,type=bind",
+        "source=${localEnv:HOME}/.MotionSense-identity/gh,target=/home/dev/.gh,type=bind"
     ],
     // Paths are derived from ${containerWorkspaceFolder} so renaming the
     // repo directory cannot desync them. LF_ matches the prefix the SDK's
@@ -46,6 +55,8 @@
     "containerEnv": {
         // Puts .claude.json inside the mounted dir too
         "CLAUDE_CONFIG_DIR": "/home/dev/.claude",
+        // A mount at ~/.config/gh could leave ~/.config itself root-owned
+        "GH_CONFIG_DIR": "/home/dev/.gh",
         "LF_SDK": "${containerWorkspaceFolder}",
         "LF_TOOLCHAIN": "${containerWorkspaceFolder}/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf",
         "LF_SYSROOT": "${containerWorkspaceFolder}/sysdrv/source/buildroot/buildroot-2023.02.6/output/host/arm-buildroot-linux-uclibcgnueabihf/sysroot",
