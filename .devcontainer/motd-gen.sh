@@ -1,17 +1,7 @@
 #!/usr/bin/env bash
-# Login greeting for the devcontainer, generated off the terminal's hot path.
-#
-#   motd-gen.sh          postCreateCommand: the slow, fixed facts (OS,
-#                        toolchain, Go), cached once per container build.
-#   motd-gen.sh --start  postStartCommand: the facts that change (board,
-#                        git, disk), then assembles the greeting and marks
-#                        it pending. No adb: starting its server takes
-#                        seconds, and a device count from start-up is stale
-#                        by the time anyone plugs a board in.
-#
-# /etc/bash.bashrc prints the greeting in the first interactive terminal
-# after each start and clears the mark, so later terminals cost two
-# builtin tests and no fork. Nothing here runs in CI.
+# Devcontainer login greeting, printed by /etc/bash.bashrc.
+#   motd-gen.sh          cache OS, toolchain, Go          (postCreateCommand)
+#   motd-gen.sh --start  add board, git, disk; mark pending (postStartCommand)
 
 set -u
 
@@ -22,6 +12,7 @@ mkdir -p "$DIR"
 B=$'\e[1m' D=$'\e[2m' C=$'\e[36m' R=$'\e[0m'
 row() { printf ' %s*%s %-11s %s\n' "$C" "$R" "$1:" "$2"; }
 
+# postCreate: cache fixed facts
 if [ "${1:-}" != --start ]; then
     . /etc/os-release
     gcc=$(ls "${LF_TOOLCHAIN:-/nonexistent}"/bin/*-linux-*-gcc 2>/dev/null | head -1)
@@ -39,6 +30,7 @@ if [ "${1:-}" != --start ]; then
     exit 0
 fi
 
+# postStart: read cache, collect changing facts
 static=()
 mapfile -t static < "$DIR/static" 2>/dev/null
 os=${static[0]:-"(run motd-gen.sh to fill in)"}
@@ -53,6 +45,7 @@ branch=$(git -C "$SDK" -c safe.directory="$SDK" \
 
 disk=$(df -h --output=avail "$SDK" 2>/dev/null | tail -1 | tr -d ' ')
 
+# Assemble the greeting
 {
     printf '%sWelcome to LuckfoxPico-MotionSense devcontainer%s %s(%s)%s\n\n' \
         "$B" "$R" "$D" "$os" "$R"
@@ -65,4 +58,5 @@ disk=$(df -h --output=avail "$SDK" 2>/dev/null | tail -1 | tr -d ' ')
         "$B" "$R" "$B" "$R" "$B" "$R"
 } > "$DIR/motd"
 
+# Mark it for the first terminal
 : > "$DIR/pending"

@@ -65,13 +65,8 @@ ENV PATH=$PATH:$GOROOT/bin
 
 WORKDIR /workspace
 
-# Non-root user for the devcontainer (devcontainer.json -> remoteUser), so
-# files created in the bind-mounted checkout belong to the host user. Dev
-# Containers remaps USER_UID/USER_GID to the host user's at start-up
-# (updateRemoteUserUID). plugdev/dialout match the GIDs Ubuntu hosts give
-# /dev nodes, for adb and serial. Passwordless sudo, so nothing ever stops
-# a build to ask for a password. CI is unaffected: it runs with a numeric
-# `docker run -u` and never uses this account.
+# Non-root user (remoteUser), with plugdev/dialout for adb and serial and
+# passwordless sudo
 ARG USERNAME=dev
 ARG USER_UID=1000
 ARG USER_GID=1000
@@ -81,9 +76,7 @@ RUN groupadd -g "${USER_GID}" "${USERNAME}" && \
     echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/${USERNAME}" && \
     chmod 0440 "/etc/sudoers.d/${USERNAME}"
 
-# Login greeting: print what .devcontainer/motd-gen.sh assembled at container
-# start, once, in the first real terminal ([ -t 1 ] skips the shells VS Code
-# extensions start). Every other shell pays two builtin tests and no fork.
+# Print the greeting from motd-gen.sh once, in the first interactive terminal
 RUN printf '%s\n' '' \
     '# devcontainer greeting, see .devcontainer/motd-gen.sh' \
     '[ -t 1 ] && [ -e "$HOME/.cache/devcontainer-motd/pending" ] && { cat "$HOME/.cache/devcontainer-motd/motd" 2>/dev/null; rm -f "$HOME/.cache/devcontainer-motd/pending"; }' \
