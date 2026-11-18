@@ -22,10 +22,15 @@
                             "ms-vscode.cmake-tools",
                             "ms-vscode.cpptools-themes",
                             "golang.go",
+                            "github.vscode-github-actions",
                             "Anthropic.claude-code",
                             "google.geminicodeassist"]
         }
     },
+    // Run as the image's non-root user; its UID/GID are remapped to the
+    // host user's at start-up, so the checkout stays owned by the host.
+    "remoteUser": "dev",
+    "updateRemoteUserUID": true,
     "runArgs": ["--privileged",
                 "-v","/dev:/dev"
             ],

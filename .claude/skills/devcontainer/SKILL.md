@@ -1,14 +1,15 @@
 ---
 name: devcontainer
-description: Use when running any command in the SDK devcontainer from the host (a build, a check script, git), when git on the host fails with "insufficient permission for adding an object to repository database" or any other permission error under .git, when files in the checkout turn out to be owned by root, or when changing .devcontainer/. The container runs everything as root on a bind mount of the host checkout; this covers what that does to the host's files and git repos, and how to run commands so it does not.
+description: Use when running any command in the SDK devcontainer from the host (a build, a check script, git), when git on the host fails with "insufficient permission for adding an object to repository database" or any other permission error under .git, when files in the checkout turn out to be owned by root, or when changing .devcontainer/. The container runs as a non-root user mapped to the host user on a bind mount of the host checkout; this covers how that works, the root-owned leftovers from the earlier all-root setup, and how to run commands so the checkout stays owned by the host.
 ---
 
-# The SDK devcontainer runs as root
+# The SDK devcontainer runs as the host user
 
-`.devcontainer/` builds an Ubuntu image with the cross toolchain and Go, and
-runs **everything as root**: there is no `remoteUser`. That is deliberate.
-Buildroot here is a single-user build and the board tooling (adb, `/dev`,
-`--privileged`) expects root.
+`.devcontainer/` builds an Ubuntu image with the cross toolchain and Go. The
+image has a user `dev` (uid/gid 1000, passwordless sudo, in `plugdev` and
+`dialout`), and `devcontainer.json` sets `"remoteUser": "dev"` with
+`updateRemoteUserUID`, so Dev Containers remaps `dev` to the host user's
+uid/gid when the container starts.
 
 The host checkout is bind-mounted, not copied:
 
@@ -16,27 +17,35 @@ The host checkout is bind-mounted, not copied:
 |---|---|
 | `/home/range/Code/luckfox-pico-sdk` | `/workspaces/luckfox-pico-sdk` |
 
-So every file the container creates in the checkout is owned by root on the
-host. For build output that is harmless. For a git repository it is not.
+Files the container creates in the checkout therefore belong to the host
+user, including what VS Code's git integration writes into `.git` on every
+save.
 
-## What goes wrong
+## Why not root
 
-The VS Code window attached to the container runs its git integration as
-root. On every file save it writes into the repository: loose objects (blobs
-of the saved files) and `config` (`vscode-merge-base`). For MotionSense these
-land in the submodule's git dir, `.git/modules/project/app/motionsense/`.
-
-Git on the host, running as `range`, then cannot write into the root-owned
-`objects/xx/` directories:
+Until 2026-11 the container ran everything as root. VS Code's git
+integration then wrote root-owned loose objects and `config`
+(`vscode-merge-base`) into the repos, for MotionSense into
+`.git/modules/project/app/motionsense/`, and host git failed with:
 
 ```
 error: insufficient permission for adding an object to repository database .../objects
 fatal: updating files failed
 ```
 
-This was traced on 2026-10-24: the root-owned objects were blobs of exactly
-the files being saved at the time, and `config` gained `vscode-merge-base`.
-It recurs as long as that VS Code window is open, whatever the agent does.
+Root was thought necessary for buildroot and the board tools. It is not:
+
+- No build script under `project/` or `sysdrv/` calls `sudo`; the `mount`
+  calls in `project/build.sh` are inside heredocs written into the rootfs
+  for the board, not run on the build host.
+- CI (`.github/workflows/release.yml`) has always run `./build.sh` in this
+  image with `docker run -u "$(id -u):$(id -g)"`, as a non-root uid with no
+  passwd entry, and passes.
+- If a step ever does need root, `sudo` is passwordless and cannot stall a
+  build on a prompt.
+
+CI does not use `dev`: its numeric `-u` overrides the image user. Keep it
+that way; do not make the workflow depend on the account.
 
 ## Running commands in the container
 
@@ -48,52 +57,43 @@ docker ps --filter "label=devcontainer.local_folder=$PWD" --format '{{.ID}}'
 
 Zero or several results: stop and ask which one is the active workspace.
 
-- **Builds** (`./build.sh`, buildroot, the cross toolchain) run as root, the
-  way the container expects:
-  `docker exec -w /workspaces/luckfox-pico-sdk <id> ./build.sh`
-- **Everything else** (git, check scripts, formatters, anything that may
-  write into the checkout) runs as the host user:
-  `docker exec -u 1000:1000 -w /workspaces/luckfox-pico-sdk/project/app/motionsense <id> python3 -I -B .claude/skills/path-references/scripts/check.py`
-- Prefer the host shell for git altogether; it needs nothing from the
-  container.
-
-Do not change the container's state to make a command work. In particular,
-never add `git config --global safe.directory '*'` as root: it switches off
-git's ownership check for every repository in the container.
-
-## One-time fix: shared repositories
-
-`core.sharedRepository=group` makes git create directories group-writable
-and setgid, so a directory root creates still belongs to the `range` group
-and the host can write into it. Tested on 2026-10-24 against root writes
-from the container (a new object directory, `index`, a `config` rewrite):
-host `git add`, `commit` and `config` all succeeded afterwards.
-
-It needs the repos owned by `range` first (see Recovery), then, from the SDK
-root on the host:
+`docker exec` defaults to the image's user, which is root, not `remoteUser`.
+Always pass the user:
 
 ```bash
-for d in .git $(find .git/modules -type d -name objects -printf '%h\n'); do
-    git --git-dir="$d" config core.sharedRepository group
-    find "$d" -type d -exec chmod g+ws {} +
-    find "$d" -type f ! -path '*/objects/*' -exec chmod g+w {} +
-done
+docker exec -u dev -w /workspaces/luckfox-pico-sdk <id> ./build.sh
 ```
 
-Loose objects stay read-only, as git intends; what matters is that their
-directories are group-writable. This keeps the container all-root and needs
-no change to `.devcontainer/`. The alternative, a `remoteUser` with uid 1000,
-fixes it at the source but means `sudo` for the build and the board tools.
+Prefer the host shell for git altogether; it needs nothing from the
+container.
 
-## Recovery
+Do not change the container's state to make a command work. In particular,
+never add `git config --global safe.directory '*'`: it switches off git's
+ownership check for every repository in the container.
 
-List what root owns, then hand it back. `sudo` is the user's to run; ask
-them to type it with the `!` prefix:
+## Board tools
+
+`/dev` is bind-mounted from the host, so device nodes keep the host's
+group ids. `dev` is in `plugdev` (46) and `dialout` (20), which match
+Ubuntu hosts; check the host with `getent group plugdev dialout` if adb or
+a serial port reports a permission error. `sudo adb` is the fallback. An
+adb server left from a root session holds port 5037: `adb kill-server`.
+
+## Recovery: root-owned leftovers
+
+The all-root setup left root-owned files: `.git` objects, build output under
+`output/` and buildroot. `dev` cannot write into them. List them, then hand
+them back. `sudo` is the user's to run; ask them to type it with the `!`
+prefix:
 
 ```bash
 find /home/range/Code/luckfox-pico-sdk -user root
-! sudo chown -R range:range /home/range/Code/luckfox-pico-sdk/.git
+! sudo chown -R range:range /home/range/Code/luckfox-pico-sdk
 ```
 
-Narrow the path to what `find` reported; a whole-tree `chown` also hands
-back build output, which is fine but slow.
+Narrow the path to what `find` reported when only `.git` is affected; a
+whole-tree `chown` also hands back build output, which is what you want
+after the switch but is slow.
+
+Repos that were given `core.sharedRepository=group` as the earlier
+workaround keep working; the setting is harmless and need not be undone.

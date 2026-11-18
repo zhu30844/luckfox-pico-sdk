@@ -65,5 +65,18 @@ ENV PATH=$PATH:$GOROOT/bin
 
 WORKDIR /workspace
 
-# Create shell profile files if they don't exist
-RUN touch /root/.bash_profile && touch /root/.bashrc
+# Non-root user for the devcontainer (devcontainer.json -> remoteUser), so
+# files created in the bind-mounted checkout belong to the host user. Dev
+# Containers remaps USER_UID/USER_GID to the host user's at start-up
+# (updateRemoteUserUID). plugdev/dialout match the GIDs Ubuntu hosts give
+# /dev nodes, for adb and serial. Passwordless sudo, so nothing ever stops
+# a build to ask for a password. CI is unaffected: it runs with a numeric
+# `docker run -u` and never uses this account.
+ARG USERNAME=dev
+ARG USER_UID=1000
+ARG USER_GID=1000
+RUN groupadd -g "${USER_GID}" "${USERNAME}" && \
+    useradd -m -s /bin/bash -u "${USER_UID}" -g "${USER_GID}" \
+            -G plugdev,dialout "${USERNAME}" && \
+    echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/${USERNAME}" && \
+    chmod 0440 "/etc/sudoers.d/${USERNAME}"
