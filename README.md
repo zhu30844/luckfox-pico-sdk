@@ -11,7 +11,7 @@ README follows unchanged below this section.
 |---|---|
 | `project/app/motionsense/` | The application (git submodule, nested one more level for media-server). Its `docs/BUILD.md` is the authoritative build and board reference. |
 | `project/cfg/BoardConfig_MotionSense/` | The board config: partition table, oem trimming, and the `overlay-motionsense` that ships `/etc/init.d/S99motionsense`. Not in the numbered `lunch` menu; pick it through `custom`. |
-| `sysdrv/source/kernel/arch/arm/boot/dts/rv1106g-motionsense.dts` | Device tree. Includes the vendor Pro Max dtsi and overrides only the deltas. |
+| `sysdrv/source/kernel/arch/arm/boot/dts/rv1106g-motionsense-pro-max.dts` | Device tree. Includes the vendor Pro Max dtsi and overrides only the deltas. |
 | `sysdrv/tools/board/buildroot/motionsense_defconfig` | The buildroot config this board uses. `BR2_DL_DIR=dl/` and `BR2_CCACHE_DIR=.buildroot-ccache/` (both at the SDK root, both gitignored) are ours, not upstream defaults. |
 | `.devcontainer/` | Toolchain, Go and `LF_*` variables for a container build. |
 

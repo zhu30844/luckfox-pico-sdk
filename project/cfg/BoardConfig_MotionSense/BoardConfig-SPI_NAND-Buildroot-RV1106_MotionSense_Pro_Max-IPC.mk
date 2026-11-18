@@ -1,6 +1,6 @@
 #!/bin/bash
 #################################################
-# 	MotionSense board config
+# 	MotionSense board config: Luckfox Pico Pro Max
 #
 # Derived from BoardConfig-SPI_NAND-Buildroot-RV1106_Luckfox_Pico_Pro_Max-IPC.mk.
 # Lives in its own BoardConfig_* directory so that syncing upstream never
@@ -9,7 +9,7 @@
 # Not listed in build.sh's numbered lunch menu (that array is hardcoded);
 # pick it through the last menu entry, "custom".
 #################################################
-export LF_ORIGIN_BOARD_CONFIG=BoardConfig-SPI_NAND-Buildroot-RV1106_MotionSense-IPC.mk
+export LF_ORIGIN_BOARD_CONFIG=BoardConfig-SPI_NAND-Buildroot-RV1106_MotionSense_Pro_Max-IPC.mk
 
 # Target CHIP
 export RK_CHIP=rv1106
@@ -21,7 +21,7 @@ export RK_APP_TYPE=RKIPC_RV1106
 export RK_BOOTARGS_CMA_SIZE="66M"
 
 # Kernel dts. Our own, so the vendor Pro Max dts stays untouched.
-export RK_KERNEL_DTS=rv1106g-motionsense.dts
+export RK_KERNEL_DTS=rv1106g-motionsense-pro-max.dts
 
 #################################################
 #	BOOT_MEDIUM

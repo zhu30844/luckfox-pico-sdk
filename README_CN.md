@@ -10,7 +10,7 @@ Luckfox Pico Pro Max（RV1106）的运动触发录像程序。本节之下是未
 |---|---|
 | `project/app/motionsense/` | 应用本身（git submodule，内部再嵌一层 media-server）。它的 `docs/BUILD_cn.md` 是构建和板级配置的权威参考。 |
 | `project/cfg/BoardConfig_MotionSense/` | 板级配置：分区表、oem 裁剪，以及打进 `/etc/init.d/S99motionsense` 的 `overlay-motionsense`。不在 `lunch` 的编号菜单里，通过 `custom` 选择。 |
-| `sysdrv/source/kernel/arch/arm/boot/dts/rv1106g-motionsense.dts` | 设备树。include vendor 的 Pro Max dtsi，只覆盖不同之处。 |
+| `sysdrv/source/kernel/arch/arm/boot/dts/rv1106g-motionsense-pro-max.dts` | 设备树。include vendor 的 Pro Max dtsi，只覆盖不同之处。 |
 | `sysdrv/tools/board/buildroot/motionsense_defconfig` | 这块板用的 buildroot 配置。`BR2_DL_DIR=dl/` 和 `BR2_CCACHE_DIR=.buildroot-ccache/`（都在 SDK 根目录，都已 gitignore）是我们加的，不是上游默认。 |
 | `.devcontainer/` | 容器构建用的工具链、Go 和 `LF_*` 变量。 |
 
