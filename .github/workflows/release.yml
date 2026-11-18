@@ -44,7 +44,7 @@ jobs:
         # bundle. Keep slug in step with slug_for() in
         # project/app/motionsense/scripts/mk-release.sh.
         include:
-          - board: BoardConfig_MotionSense
+          - board: BoardConfig_MotionSense_Pro_Max
             slug: luckfox-pico-pro-max
     steps:
       - name: Free disk space
