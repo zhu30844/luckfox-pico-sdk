@@ -11,11 +11,15 @@ image has a user `dev` (uid/gid 1000, passwordless sudo, in `plugdev` and
 `updateRemoteUserUID`, so Dev Containers remaps `dev` to the host user's
 uid/gid when the container starts.
 
-The host checkout is bind-mounted, not copied:
+The host checkout is bind-mounted, not copied, at
+`/workspaces/luckfox-pico-sdk`. The host path is not fixed; read it from
+inside the container rather than assuming one:
 
-| Host | Container |
-|---|---|
-| `/home/range/Code/luckfox-pico-sdk` | `/workspaces/luckfox-pico-sdk` |
+```bash
+grep ' /workspaces/luckfox-pico-sdk ' /proc/self/mountinfo
+```
+
+The fourth field is the host path.
 
 Files the container creates in the checkout therefore belong to the host
 user, including what VS Code's git integration writes into `.git` on every
@@ -83,12 +87,12 @@ adb server left from a root session holds port 5037: `adb kill-server`.
 
 The all-root setup left root-owned files: `.git` objects, build output under
 `output/` and buildroot. `dev` cannot write into them. List them, then hand
-them back. `sudo` is the user's to run; ask them to type it with the `!`
-prefix:
+them back. `find` runs in the container; `chown` is the user's to run on
+the host, from the checkout root:
 
 ```bash
-find /home/range/Code/luckfox-pico-sdk -user root
-! sudo chown -R range:range /home/range/Code/luckfox-pico-sdk
+find /workspaces/luckfox-pico-sdk -user root
+sudo chown -R "$(id -un):$(id -gn)" .
 ```
 
 Narrow the path to what `find` reported when only `.git` is affected; a
