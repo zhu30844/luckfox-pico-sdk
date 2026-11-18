@@ -33,10 +33,19 @@
     "runArgs": ["--privileged",
                 "-v","/dev:/dev"
             ],
+    // Keep the Claude Code login across rebuilds. The host dir is created
+    // first, as the host user: if the source were missing, Docker would
+    // create it as root.
+    "initializeCommand": "mkdir -p \"${localEnv:HOME}/.claude-MotionSense\"",
+    "mounts": [
+        "source=${localEnv:HOME}/.claude-MotionSense,target=/home/dev/.claude,type=bind"
+    ],
     // Paths are derived from ${containerWorkspaceFolder} so renaming the
     // repo directory cannot desync them. LF_ matches the prefix the SDK's
     // own board configs use.
     "containerEnv": {
+        // Puts .claude.json inside the mounted dir too
+        "CLAUDE_CONFIG_DIR": "/home/dev/.claude",
         "LF_SDK": "${containerWorkspaceFolder}",
         "LF_TOOLCHAIN": "${containerWorkspaceFolder}/tools/linux/toolchain/arm-rockchip830-linux-uclibcgnueabihf",
         "LF_SYSROOT": "${containerWorkspaceFolder}/sysdrv/source/buildroot/buildroot-2023.02.6/output/host/arm-buildroot-linux-uclibcgnueabihf/sysroot",
