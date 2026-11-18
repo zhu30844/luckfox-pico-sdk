@@ -1,0 +1,1 @@
+../BoardConfig_MotionSense_Pro_Max/motionsense-oem-pre.sh

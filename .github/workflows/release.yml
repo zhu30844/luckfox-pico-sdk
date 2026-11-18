@@ -46,6 +46,8 @@ jobs:
         include:
           - board: BoardConfig_MotionSense_Pro_Max
             slug: luckfox-pico-pro-max
+          - board: BoardConfig_MotionSense_Ultra
+            slug: luckfox-pico-ultra
     steps:
       - name: Free disk space
         # buildroot's output tree is ~20 GB; the hosted runner has ~14 GB
