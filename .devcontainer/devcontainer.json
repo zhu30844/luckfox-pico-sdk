@@ -55,6 +55,8 @@
     // Greeting: fixed parts on create, changing parts on start
     "postCreateCommand": {
         "path": "echo 'export PATH=$LF_TOOLCHAIN/bin:$PATH' >> ~/.bashrc",
+        // Claude Code CLI into ~/.local/bin; dev-only, so not in the CI image
+        "claude": "curl -fsSL https://claude.ai/install.sh | bash && echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.bashrc",
         "motd": "bash .devcontainer/motd-gen.sh"
     },
     "postStartCommand": "bash .devcontainer/motd-gen.sh --start"

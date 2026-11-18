@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Devcontainer login greeting, printed by /etc/bash.bashrc.
 #   motd-gen.sh          cache OS, toolchain, Go          (postCreateCommand)
-#   motd-gen.sh --start  add board, git, disk; mark pending (postStartCommand)
+#   motd-gen.sh --start  add board, git; mark pending (postStartCommand)
 
 set -u
 
@@ -43,8 +43,6 @@ git_line=$(git -C "$SDK" -c safe.directory="$SDK" \
 branch=$(git -C "$SDK" -c safe.directory="$SDK" \
     symbolic-ref --short -q HEAD 2>/dev/null || echo detached)
 
-disk=$(df -h --output=avail "$SDK" 2>/dev/null | tail -1 | tr -d ' ')
-
 # Assemble the greeting
 {
     printf '%sWelcome to LuckfoxPico-MotionSense devcontainer%s %s(%s)%s\n\n' \
@@ -53,9 +51,10 @@ disk=$(df -h --output=avail "$SDK" 2>/dev/null | tail -1 | tr -d ' ')
     row Board "${board:-not selected (./build.sh lunch)}"
     [ ${#static[@]} -gt 1 ] && printf '%s\n' "${static[@]:1}"
     row Git "$branch @ ${git_line:-unknown}"
-    row Disk "$disk free on $SDK"
-    printf '\n %sBuild:%s ./build.sh   %sClean:%s ./build.sh clean   %sBoard:%s ./build.sh lunch\n\n' \
+    printf '\n %sBuild:%s ./build.sh   %sClean:%s ./build.sh clean   %sBoard:%s ./build.sh lunch\n' \
         "$B" "$R" "$B" "$R" "$B" "$R"
+    printf ' %sThis greeting is from container start; after a git pull, run "Dev Containers: Rebuild Container".%s\n\n' \
+        "$D" "$R"
 } > "$DIR/motd"
 
 # Mark it for the first terminal
