@@ -1,29 +1,62 @@
 ---
 name: devcontainer
-description: Use when running any command in the SDK devcontainer from the host (a build, a check script, git), when git on the host fails with "insufficient permission for adding an object to repository database" or any other permission error under .git, when files in the checkout turn out to be owned by root, or when changing .devcontainer/. The container runs as a non-root user mapped to the host user on a bind mount of the host checkout; this covers how that works, the root-owned leftovers from the earlier all-root setup, and how to run commands so the checkout stays owned by the host.
+description: Use when running INSIDE the SDK devcontainer (/.dockerenv exists, cwd under /workspaces) and about to build, use adb or a serial port, run git, touch file ownership, or change .devcontainer/; also when something seems to need the host. Covers the `dev` user mapped to the host user, what works from inside, what to hand to the user for the host, and why the container no longer runs as root. On the host, outside the container, use devcontainer-host instead.
 ---
 
-# The SDK devcontainer runs as the host user
+# Inside the SDK devcontainer
 
-`.devcontainer/` builds an Ubuntu image with the cross toolchain and Go. The
-image has a user `dev` (uid/gid 1000, passwordless sudo, in `plugdev` and
-`dialout`), and `devcontainer.json` sets `"remoteUser": "dev"` with
-`updateRemoteUserUID`, so Dev Containers remaps `dev` to the host user's
-uid/gid when the container starts.
+You run as `dev`: uid/gid remapped to the host user's at start-up
+(`remoteUser` + `updateRemoteUserUID` in `devcontainer.json`), passwordless
+sudo, in `plugdev` and `dialout`. Check with `id`.
 
-The host checkout is bind-mounted, not copied, at
-`/workspaces/luckfox-pico-sdk`. The host path is not fixed; read it from
-inside the container rather than assuming one:
+`id -u` is 0: the container predates the switch to `dev`; ask the user to
+rebuild it. Until then, run git as the host user
+(`setpriv --reuid=1000 --regid=1000 --clear-groups env HOME=/tmp git -c safe.directory="$PWD" ...`)
+and `chown 1000:1000` any file you write in the checkout.
+
+The checkout is a bind mount of the host's at `/workspaces/luckfox-pico-sdk`.
+The host path is not fixed; read it rather than assume one (fourth field):
 
 ```bash
 grep ' /workspaces/luckfox-pico-sdk ' /proc/self/mountinfo
 ```
 
-The fourth field is the host path.
+## Do it here
 
-Files the container creates in the checkout therefore belong to the host
-user, including what VS Code's git integration writes into `.git` on every
-save.
+- Build: `./build.sh` (and `lunch`, `clean`). No build script calls sudo.
+- Board: adb, serial (`/dev/ttyUSB*`), Maskrom flashing (`rkflash.sh`).
+  The container is `--privileged` with the host's `/dev` mounted; hotplugged
+  devices appear.
+- Network to the board (ssh, scp, `adb connect`).
+- git, including push: SSH goes through the agent VS Code forwards.
+
+## Hand to the user
+
+Write the exact command and let the user run it on the host; do not work
+around the container to do it yourself.
+
+- Rebuild or restart the container (VS Code: Dev Containers: Rebuild
+  Container).
+- `chown` of root-owned files, from the checkout root on the host:
+  `sudo chown -R "$(id -un):$(id -gn)" .` (list them first:
+  `find /workspaces/luckfox-pico-sdk -user root`).
+- udev rules or group ids on the host.
+- The board connecting back into the container (NFS, TFTP): needs
+  `--network host` or a port mapping in `runArgs`, a `.devcontainer/` change
+  plus a rebuild.
+
+Never:
+
+- mount `/var/run/docker.sock` into the container: it is root on the host;
+- `git config --global safe.directory '*'`: it turns off git's ownership
+  check for every repository.
+
+## Board tools
+
+Device nodes keep the host's group ids. `plugdev` (46) and `dialout` (20)
+match Ubuntu hosts; on a permission error, ask the user for
+`getent group plugdev dialout` on the host. `sudo adb` is the fallback. An
+adb server from an old root session holds port 5037: `adb kill-server`.
 
 ## Why not root
 
@@ -50,54 +83,3 @@ Root was thought necessary for buildroot and the board tools. It is not:
 
 CI does not use `dev`: its numeric `-u` overrides the image user. Keep it
 that way; do not make the workflow depend on the account.
-
-## Running commands in the container
-
-Find the container by the label VS Code puts on it, from the SDK root:
-
-```bash
-docker ps --filter "label=devcontainer.local_folder=$PWD" --format '{{.ID}}'
-```
-
-Zero or several results: stop and ask which one is the active workspace.
-
-`docker exec` defaults to the image's user, which is root, not `remoteUser`.
-Always pass the user:
-
-```bash
-docker exec -u dev -w /workspaces/luckfox-pico-sdk <id> ./build.sh
-```
-
-Prefer the host shell for git altogether; it needs nothing from the
-container.
-
-Do not change the container's state to make a command work. In particular,
-never add `git config --global safe.directory '*'`: it switches off git's
-ownership check for every repository in the container.
-
-## Board tools
-
-`/dev` is bind-mounted from the host, so device nodes keep the host's
-group ids. `dev` is in `plugdev` (46) and `dialout` (20), which match
-Ubuntu hosts; check the host with `getent group plugdev dialout` if adb or
-a serial port reports a permission error. `sudo adb` is the fallback. An
-adb server left from a root session holds port 5037: `adb kill-server`.
-
-## Recovery: root-owned leftovers
-
-The all-root setup left root-owned files: `.git` objects, build output under
-`output/` and buildroot. `dev` cannot write into them. List them, then hand
-them back. `find` runs in the container; `chown` is the user's to run on
-the host, from the checkout root:
-
-```bash
-find /workspaces/luckfox-pico-sdk -user root
-sudo chown -R "$(id -un):$(id -gn)" .
-```
-
-Narrow the path to what `find` reported when only `.git` is affected; a
-whole-tree `chown` also hands back build output, which is what you want
-after the switch but is slow.
-
-Repos that were given `core.sharedRepository=group` as the earlier
-workaround keep working; the setting is harmless and need not be undone.
