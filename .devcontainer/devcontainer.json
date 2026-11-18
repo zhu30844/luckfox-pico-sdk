@@ -44,5 +44,12 @@
         "LF_INCLUDE": "${containerWorkspaceFolder}/sysdrv/source/buildroot/buildroot-2023.02.6/output/host/arm-buildroot-linux-uclibcgnueabihf/sysroot/usr/include",
         "LF_LIB": "${containerWorkspaceFolder}/sysdrv/source/buildroot/buildroot-2023.02.6/output/host/arm-buildroot-linux-uclibcgnueabihf/sysroot/usr/lib"
     },
-    "postCreateCommand": "echo 'export PATH=$LF_TOOLCHAIN/bin:$PATH' >> ~/.bashrc"
+    // postCreate caches the slow, fixed parts of the login greeting;
+    // postStart adds the parts that change and marks it for the first
+    // terminal. See .devcontainer/motd-gen.sh.
+    "postCreateCommand": {
+        "path": "echo 'export PATH=$LF_TOOLCHAIN/bin:$PATH' >> ~/.bashrc",
+        "motd": "bash .devcontainer/motd-gen.sh"
+    },
+    "postStartCommand": "bash .devcontainer/motd-gen.sh --start"
 }

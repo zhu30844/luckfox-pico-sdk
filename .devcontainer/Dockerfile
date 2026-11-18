@@ -80,3 +80,11 @@ RUN groupadd -g "${USER_GID}" "${USERNAME}" && \
             -G plugdev,dialout "${USERNAME}" && \
     echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/${USERNAME}" && \
     chmod 0440 "/etc/sudoers.d/${USERNAME}"
+
+# Login greeting: print what .devcontainer/motd-gen.sh assembled at container
+# start, once, in the first real terminal ([ -t 1 ] skips the shells VS Code
+# extensions start). Every other shell pays two builtin tests and no fork.
+RUN printf '%s\n' '' \
+    '# devcontainer greeting, see .devcontainer/motd-gen.sh' \
+    '[ -t 1 ] && [ -e "$HOME/.cache/devcontainer-motd/pending" ] && { cat "$HOME/.cache/devcontainer-motd/motd" 2>/dev/null; rm -f "$HOME/.cache/devcontainer-motd/pending"; }' \
+    >> /etc/bash.bashrc
