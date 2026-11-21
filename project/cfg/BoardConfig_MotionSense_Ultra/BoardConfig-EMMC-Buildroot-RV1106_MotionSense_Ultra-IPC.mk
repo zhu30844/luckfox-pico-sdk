@@ -49,7 +49,7 @@ export RK_PARTITION_FS_TYPE_CFG=rootfs@IGNORE@ext4,userdata@/userdata@ext4,oem@/
 #################################################
 export LF_TARGET_ROOTFS=buildroot
 # MotionSense's, not the vendor luckfox_pico_w_defconfig: that one lacks the
-# sqlite and libyaml MotionSense links against, and does not use the dl/ and
+# sqlite and cjson MotionSense links against, and does not use the dl/ and
 # ccache dirs CI caches.
 export RK_BUILDROOT_DEFCONFIG=motionsense_defconfig
 

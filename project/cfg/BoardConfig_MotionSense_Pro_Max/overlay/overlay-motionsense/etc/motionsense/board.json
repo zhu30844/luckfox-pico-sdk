@@ -1,0 +1,6 @@
+{
+  "storage": {
+    "root": "/mnt/sdcard",
+    "removable": true
+  }
+}
