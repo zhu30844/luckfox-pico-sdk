@@ -32,7 +32,7 @@ RUN apt-get update && \
         git ssh vim \
         # Libraries and tools
         libssl-dev libncurses5-dev \
-        libsqlite3-dev libyaml-dev libfreetype-dev \
+        libsqlite3-dev libfreetype-dev libcjson-dev \
         device-tree-compiler \
         pkg-config bc \
         # Utilities
