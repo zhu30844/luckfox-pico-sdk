@@ -6,11 +6,12 @@ LABEL maintainer="zhu30844" \
 # ---------------------------------------------------------------------------
 # Configurable from devcontainer.json -> build.args
 # The defaults below only apply to a bare `docker build`; devcontainer.json
-# overrides all three.
+# overrides them.
 # ---------------------------------------------------------------------------
 ARG LANG=C.UTF-8
 ARG TZ=Etc/UTC
 ARG GO_VERSION=1.27.3
+ARG NODE_VERSION=26.13.1
 
 # Build-time only, deliberately ARG and not ENV: keeps apt quiet during the
 # build without leaking noninteractive into the running container's shell.
@@ -31,6 +32,7 @@ RUN apt-get update && \
         git ssh vim \
         # Libraries and tools
         libssl-dev libncurses5-dev \
+        libsqlite3-dev libyaml-dev libfreetype-dev \
         device-tree-compiler \
         pkg-config bc \
         # Utilities
@@ -62,6 +64,15 @@ RUN wget -q "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" && \
 # Configure Go environment
 ENV GOROOT=/usr/local/go
 ENV PATH=$PATH:$GOROOT/bin
+
+# Install Node.js
+RUN wget -q "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.gz" && \
+    rm -rf /usr/local/node && \
+    mkdir /usr/local/node && \
+    tar -C /usr/local/node --strip-components=1 -xzf "node-v${NODE_VERSION}-linux-x64.tar.gz" && \
+    rm "node-v${NODE_VERSION}-linux-x64.tar.gz"
+
+ENV PATH=$PATH:/usr/local/node/bin
 
 WORKDIR /workspace
 

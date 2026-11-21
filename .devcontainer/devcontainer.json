@@ -2,12 +2,13 @@
     "name": "LuckfoxPico-MotionSense",
     "build": {
         "dockerfile": "Dockerfile",
-        // Locale, timezone and Go version. Changing any of these needs a
+        // Locale, timezone, Go and Node versions. Changing any of these needs a
         // "Dev Containers: Rebuild Container" to take effect.
         "args": {
             "LANG": "C.UTF-8",
             "TZ": "Australia/Perth",
-            "GO_VERSION": "1.27.3"
+            "GO_VERSION": "1.27.3",
+            "NODE_VERSION": "26.13.1"
         }
     },
     // GitHub CLI. A feature rather than a Dockerfile line: CI builds that
@@ -34,6 +35,7 @@
                             "ms-vscode.cmake-tools",
                             "ms-vscode.cpptools-themes",
                             "golang.go",
+                            "Vue.volar",
                             "github.vscode-github-actions",
                             "Anthropic.claude-code",
                             "google.geminicodeassist"]
