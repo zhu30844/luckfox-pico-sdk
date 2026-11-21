@@ -41,6 +41,8 @@
                             "google.geminicodeassist"]
         }
     },
+    // The two settings above are not always honoured; this is.
+    "otherPortsAttributes": { "onAutoForward": "ignore" },
     // Run as dev, remapped to the host user's UID/GID
     "remoteUser": "dev",
     "updateRemoteUserUID": true,
