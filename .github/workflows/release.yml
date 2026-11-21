@@ -165,7 +165,9 @@ jobs:
           JOBS: ${{ env.HOSTED == 'true' && '0' || '6' }}
         run: |
           [ "$JOBS" = 0 ] && JOBS=$(nproc)
-          docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/sdk" -w /sdk \
+          # Same path as the devcontainer: build output records absolute paths.
+          docker run --rm -u "$(id -u):$(id -g)" \
+            -v "$PWD:/workspaces/luckfox-pico-sdk" -w /workspaces/luckfox-pico-sdk \
             -e HOME=/tmp -e LF_JOBS="$JOBS" "$IMAGE" ./build.sh
 
       - name: Assemble release bundle
@@ -173,10 +175,12 @@ jobs:
         # run's is uploaded.
         run: |
           rm -rf output/release
-          docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/sdk" -w /sdk -e HOME=/tmp "$IMAGE" \
+          docker run --rm -u "$(id -u):$(id -g)" \
+            -v "$PWD:/workspaces/luckfox-pico-sdk" -w /workspaces/luckfox-pico-sdk \
+            -e HOME=/tmp "$IMAGE" \
             project/app/motionsense/scripts/mk-release.sh \
               --board "${{ matrix.board }}" --slug "${{ matrix.slug }}" \
-              --version "${{ steps.ver.outputs.version }}" --out /sdk/output/release
+              --version "${{ steps.ver.outputs.version }}"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
