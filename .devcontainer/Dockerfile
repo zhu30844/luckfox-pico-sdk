@@ -77,13 +77,14 @@ ENV PATH=$PATH:/usr/local/node/bin
 WORKDIR /workspace
 
 # Non-root user (remoteUser), with plugdev/dialout for adb and serial and
-# passwordless sudo
+# passwordless sudo. Group root is for flashing: a board in Maskrom mode is
+# a root:root 0664 node unless the host has a udev rule for it.
 ARG USERNAME=dev
 ARG USER_UID=1000
 ARG USER_GID=1000
 RUN groupadd -g "${USER_GID}" "${USERNAME}" && \
     useradd -m -s /bin/bash -u "${USER_UID}" -g "${USER_GID}" \
-            -G plugdev,dialout "${USERNAME}" && \
+            -G plugdev,dialout,root "${USERNAME}" && \
     echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/${USERNAME}" && \
     chmod 0440 "/etc/sudoers.d/${USERNAME}"
 
