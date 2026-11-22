@@ -32,10 +32,11 @@ export RK_UBOOT_DEFCONFIG_FRAGMENT=rk-sfc.config
 #################################################
 #	PARTITION
 #################################################
-# Total 255MB of the 256MB SPI NAND. oem grown to 60M (MotionSense plus the
-# stock media libraries) at the expense of rootfs, which was only ~51M used.
+# Total 255MB of the 256MB SPI NAND. misc and recovery are for updates and
+# empty until RK_ENABLE_RECOVERY is set; userdata takes the rest and holds the
+# update package. See Partitions in the app's docs/BUILD.md.
 # Nothing validates images against these sizes, so check after building.
-export RK_PARTITION_CMD_IN_ENV="256K(env),256K@256K(idblock),512K(uboot),4M(boot),60M(oem),10M(userdata),180M(rootfs)"
+export RK_PARTITION_CMD_IN_ENV="256K(env),256K@256K(idblock),512K(uboot),512K(misc),6M(boot),8M(recovery),48M(rootfs),64M(oem),130560K(userdata)"
 export RK_PARTITION_FS_TYPE_CFG=rootfs@IGNORE@ubifs,oem@/oem@ubifs,userdata@/userdata@ubifs
 
 #################################################

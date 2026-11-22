@@ -7,7 +7,7 @@ description: Use when running INSIDE the SDK devcontainer (/.dockerenv exists, c
 
 You run as `dev`: uid/gid remapped to the host user's at start-up
 (`remoteUser` + `updateRemoteUserUID` in `devcontainer.json`), passwordless
-sudo, in `plugdev` and `dialout`. Check with `id`.
+sudo, in `plugdev`, `dialout` and `root`. Check with `id`.
 
 `id -u` is 0: the container predates the switch to `dev`; ask the user to
 rebuild it. Until then, run git as the host user
@@ -63,6 +63,10 @@ Device nodes keep the host's group ids. `plugdev` (46) and `dialout` (20)
 match Ubuntu hosts; on a permission error, ask the user for
 `getent group plugdev dialout` on the host. `sudo adb` is the fallback. An
 adb server from an old root session holds port 5037: `adb kill-server`.
+
+A board in Maskrom mode is a `root:root` 0664 node, which is what group
+`root` is for. Without it `upgrade_tool` says "Creating comm object failed"
+and `rkflash.sh update` segfaults: the container needs a rebuild.
 
 ## Why not root
 
