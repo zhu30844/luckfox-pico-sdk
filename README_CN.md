@@ -34,6 +34,14 @@ adb reboot loader && ./rkflash.sh update
 `upgrade_tool` 在部分主机上会段错误，在 devcontainer 里（`--privileged -v /dev:/dev`）
 可以正常烧录。细节、SD 卡要求和日常工作流见 `project/app/motionsense/docs/`。
 
+这个代码树大到 VS Code 会提示"无法在这个大型工作区中监视文件更改"。前端开发服务器发现文件保存用的是
+同一个内核上限，所以页面不再自动更新时可能就是这个原因。在主机上（不是容器里）调高一次即可：
+
+```bash
+echo fs.inotify.max_user_watches=524288 | sudo tee /etc/sysctl.d/60-inotify.conf
+sudo sysctl --system
+```
+
 ---
 
 ![luckfox](https://github.com/LuckfoxTECH/luckfox-pico/assets/144299491/cec5c4a5-22b9-4a9a-abb1-704b11651e88)

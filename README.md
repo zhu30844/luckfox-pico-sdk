@@ -36,6 +36,16 @@ firmware in the devcontainer image and publishes it as `vX.Y.Z` on the MotionSen
 (`--privileged -v /dev:/dev`). Details, the SD card requirements and the
 day-to-day workflow are in `project/app/motionsense/docs/`.
 
+The tree is large enough for VS Code to warn that it is "unable to watch for
+file changes in this large workspace". The front end's dev server sees a save
+through the same kernel limit, so a page that stops updating can be this.
+Raise it once on the host, not in the container:
+
+```bash
+echo fs.inotify.max_user_watches=524288 | sudo tee /etc/sysctl.d/60-inotify.conf
+sudo sysctl --system
+```
+
 ---
 
 ![luckfox](https://github.com/LuckfoxTECH/luckfox-pico/assets/144299491/cec5c4a5-22b9-4a9a-abb1-704b11651e88)
