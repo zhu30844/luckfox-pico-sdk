@@ -104,3 +104,9 @@
 &rtc {
 	status = "okay";
 };
+
+/**********WATCHDOG**********/
+/* Idle until something opens /dev/watchdog. */
+&wdt {
+	status = "okay";
+};
