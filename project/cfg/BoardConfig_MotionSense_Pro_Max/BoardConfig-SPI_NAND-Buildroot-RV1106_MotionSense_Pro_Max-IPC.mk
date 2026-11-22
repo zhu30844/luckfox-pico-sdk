@@ -47,7 +47,9 @@ export RK_BUILDROOT_DEFCONFIG=motionsense_defconfig
 
 export RK_ARCH=arm
 export RK_TOOLCHAIN_CROSS=arm-rockchip830-linux-uclibcgnueabihf
-export RK_MISC=wipe_all-misc.img
+# A blank misc boots normally. The vendor default, recovery-misc.img, boots
+# into recovery with --wipe_all; wipe_all-misc.img does not exist in the SDK.
+export RK_MISC=blank-misc.img
 export RK_UBOOT_DEFCONFIG=luckfox_rv1106_uboot_defconfig
 export RK_KERNEL_DEFCONFIG=luckfox_rv1106_linux_defconfig
 
@@ -62,6 +64,10 @@ export RK_CAMERA_SENSOR_CAC_BIN="CAC_sc4336_OT01_40IRC_F16"
 #################################################
 # Keep the app on its own partition so it can be reflashed without rootfs.
 export RK_BUILD_APP_TO_OEM_PARTITION=y
+
+# recovery.img: a kernel and a busybox ramdisk that flash an update package
+export RK_ENABLE_RECOVERY=y
+export RK_RECOVERY_KERNEL_DEFCONFIG_FRAGMENT="rv1106-recovery.config"
 
 # Everything below is off: this is a product image, not an evaluation one.
 export RK_ENABLE_ROCKCHIP_TEST=n
