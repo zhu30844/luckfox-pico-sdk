@@ -19,9 +19,44 @@
     "customizations": {
         "vscode": {
             "settings": {
-                "terminal.integrated.shell.linux": "/bin/bash"
+                "terminal.integrated.shell.linux": "/bin/bash",
                 // Port auto-forwarding cannot be turned off from here: set
                 // "remote.autoForwardPorts": false in your own user settings.
+
+                // Web front end (project/app/motionsense/agent/web). Prettier
+                // is set per language so it never formats the C, Go or docs.
+                "eslint.workingDirectories": [
+                    { "pattern": "project/app/motionsense/agent/web" }
+                ],
+                "[vue]": {
+                    "editor.defaultFormatter": "esbenp.prettier-vscode",
+                    "editor.formatOnSave": true,
+                    "editor.codeActionsOnSave": { "source.fixAll.eslint": "explicit" }
+                },
+                "[typescript]": {
+                    "editor.defaultFormatter": "esbenp.prettier-vscode",
+                    "editor.formatOnSave": true,
+                    "editor.codeActionsOnSave": { "source.fixAll.eslint": "explicit" }
+                },
+                // Trees nobody edits by hand. Watching them uses up the
+                // kernel's inotify watches, which Vite needs to see a save.
+                "files.watcherExclude": {
+                    "**/sysdrv/source/buildroot/**": true,
+                    "**/sysdrv/source/objs_kernel/**": true,
+                    "**/sysdrv/source/mcu/**": true,
+                    "**/sysdrv/out/**": true,
+                    "**/output/**": true,
+                    "**/dl/**": true,
+                    "**/.buildroot-ccache/**": true,
+                    "**/node_modules/**": true,
+                    "**/project/app/motionsense/build*/**": true,
+                    "**/project/app/motionsense/install*/**": true
+                },
+                "explorer.fileNesting.enabled": true,
+                "explorer.fileNesting.patterns": {
+                    "tsconfig.json": "tsconfig.*.json, env.d.ts",
+                    "package.json": "package-lock.json, eslint*, .prettier*"
+                }
             },
             "extensions": [ "Erol444.adb-files",
                             "ms-vscode.cpptools",
@@ -31,6 +66,8 @@
                             "ms-vscode.cpptools-themes",
                             "golang.go",
                             "Vue.volar",
+                            "dbaeumer.vscode-eslint",
+                            "esbenp.prettier-vscode",
                             "github.vscode-github-actions",
                             "Anthropic.claude-code",
                             "google.geminicodeassist"]
