@@ -168,7 +168,8 @@ jobs:
           # Same path as the devcontainer: build output records absolute paths.
           docker run --rm -u "$(id -u):$(id -g)" \
             -v "$PWD:/workspaces/luckfox-pico-sdk" -w /workspaces/luckfox-pico-sdk \
-            -e HOME=/tmp -e LF_JOBS="$JOBS" "$IMAGE" ./build.sh
+            -e HOME=/tmp -e LF_JOBS="$JOBS" \
+            -e MS_VERSION="${{ steps.ver.outputs.version }}" "$IMAGE" ./build.sh
 
       - name: Assemble release bundle
         # The self-hosted tree persists: drop earlier bundles so only this
