@@ -37,7 +37,7 @@ RUN apt-get update && \
         pkg-config bc \
         # Utilities
         module-assistant expect \
-        unzip file cpio rsync wget patch \
+        zip unzip file cpio rsync wget patch \
         python-is-python3 \
         # System and network
         tzdata locales passwd openssl \
