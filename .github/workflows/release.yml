@@ -188,6 +188,8 @@ jobs:
           path: |
             output/release/*.zip
             output/release/*.zip.sha256
+            output/release/*-update.tar
+            output/release/*-update.tar.sha256
           if-no-files-found: error
           retention-days: 14
 
@@ -225,6 +227,7 @@ jobs:
           Built from zhu30844/luckfox-pico-sdk @ ${GITHUB_SHA} (tag \`${GITHUB_REF_NAME}\`),
           MotionSense @ ${APP_SHA}. Each zip holds the flashable \`update.img\`, the
           individual partitions, licences, and a SOURCES.md naming these revisions.
+          Each \`-update.tar\` is the package for updating a running board.
           FOOTER
 
           flags=()

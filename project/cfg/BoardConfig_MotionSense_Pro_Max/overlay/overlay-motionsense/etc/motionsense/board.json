@@ -1,4 +1,5 @@
 {
+  "name": "luckfox-pico-pro-max",
   "storage": {
     "root": "/mnt/sdcard",
     "removable": true

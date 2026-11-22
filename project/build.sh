@@ -962,7 +962,12 @@ function build_recovery() {
 		-o ! -f $RK_PROJECT_PATH_PC_TOOLS/mkimage ]; then
 		build_tool
 	fi
-	cp -fa $PROJECT_TOP_DIR/scripts/RkLunch-recovery.sh $RK_PROJECT_PATH_RAMDISK_TINY_ROOTFS/usr/bin/RkLunch.sh
+	# RK_RECOVERY_LUNCH_SCRIPT: a board's own script, in its config directory
+	local lunch_script=$PROJECT_TOP_DIR/scripts/RkLunch-recovery.sh
+	if [ -n "$RK_RECOVERY_LUNCH_SCRIPT" ]; then
+		lunch_script=$(dirname $(realpath $BOARD_CONFIG))/$RK_RECOVERY_LUNCH_SCRIPT
+	fi
+	cp -fL $lunch_script $RK_PROJECT_PATH_RAMDISK_TINY_ROOTFS/usr/bin/RkLunch.sh
 	cp -fa $PROJECT_TOP_DIR/scripts/boot4recovery.its $RK_PROJECT_PATH_RAMDISK
 
 	mkdir -p $(dirname $RK_PROJECT_FILE_RECOVERY_LUNCH_SCRIPT)
