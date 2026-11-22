@@ -48,7 +48,8 @@
                     "**/output/**": true,
                     "**/dl/**": true,
                     "**/.buildroot-ccache/**": true,
-                    "**/node_modules/**": true,
+                    // Its first level stays watched, or the editor misses a reinstall.
+                    "**/node_modules/*/**": true,
                     "**/project/app/motionsense/build*/**": true,
                     "**/project/app/motionsense/install*/**": true
                 },
