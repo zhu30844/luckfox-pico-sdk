@@ -32,11 +32,12 @@ export RK_UBOOT_DEFCONFIG_FRAGMENT=rk-sfc.config
 #################################################
 #	PARTITION
 #################################################
-# Total 255MB of the 256MB SPI NAND. misc and recovery are for updates and
-# empty until RK_ENABLE_RECOVERY is set; userdata takes the rest and holds the
+# Total 255MB of the 256MB SPI NAND. userdata takes the rest and holds the
 # update package. See Partitions in the app's docs/BUILD.md.
+# boot, rootfs and oem sit between recovery and userdata, which must not move,
+# so an update could later resize those three against each other.
 # Nothing validates images against these sizes, so check after building.
-export RK_PARTITION_CMD_IN_ENV="256K(env),256K@256K(idblock),512K(uboot),512K(misc),6M(boot),8M(recovery),48M(rootfs),64M(oem),130560K(userdata)"
+export RK_PARTITION_CMD_IN_ENV="256K(env),256K@256K(idblock),512K(uboot),512K(misc),8M(recovery),6M(boot),48M(rootfs),64M(oem),130560K(userdata)"
 export RK_PARTITION_FS_TYPE_CFG=rootfs@IGNORE@ubifs,oem@/oem@ubifs,userdata@/userdata@ubifs
 
 #################################################
@@ -68,6 +69,8 @@ export RK_BUILD_APP_TO_OEM_PARTITION=y
 # recovery.img: a kernel and a busybox ramdisk that flash an update package
 export RK_ENABLE_RECOVERY=y
 export RK_RECOVERY_KERNEL_DEFCONFIG_FRAGMENT="rv1106-recovery.config"
+# A symlink to the app's update/recovery.sh; it flashes a package in /userdata
+export RK_RECOVERY_LUNCH_SCRIPT=motionsense-recovery.sh
 
 # Everything below is off: this is a product image, not an evaluation one.
 export RK_ENABLE_ROCKCHIP_TEST=n
