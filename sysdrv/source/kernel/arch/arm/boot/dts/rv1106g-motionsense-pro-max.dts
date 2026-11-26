@@ -110,3 +110,77 @@
 &wdt {
 	status = "okay";
 };
+
+/**********BASEBOARD**********/
+/*
+ * What the MotionSense baseboard (project/app/motionsense/hardware/
+ * promax-baseboard) hangs on the 40-pin header. Without the baseboard these
+ * are idle controllers on open pins.
+ *
+ * The vendor dtsi gives several of these controllers two pin groups at once.
+ * Each is narrowed here to the group on the header pin the baseboard uses,
+ * because the other group lands on a pin with another job:
+ *   i2c3  m0 is GPIO2_A6/A7, and A6 is the card-detect line
+ *   pwm10 m2 is GPIO1_D1, UART3 RX
+ *   pwm11 m2 is GPIO1_D3, I2C3 SCL
+ */
+
+/* The vendor's example DHT11 claims GPIO1_C7, which is PWM11 (tilt servo). */
+/ {
+	/delete-node/ dht11_sensor;
+};
+
+/* Head OLED, header pins 11 and 17. */
+&i2c1 {
+	status = "okay";
+};
+
+/* RTC 0x68, address EEPROM 0x50, humidity sensor 0x44; pins 9 and 10. */
+&i2c3 {
+	pinctrl-0 = <&i2c3m1_xfer>;
+	status = "okay";
+};
+
+/* Pan servo, pin 5. */
+&pwm10 {
+	pinctrl-0 = <&pwm10m1_pins>;
+	status = "okay";
+};
+
+/* Tilt servo, pin 4. */
+&pwm11 {
+	pinctrl-0 = <&pwm11m1_pins>;
+	status = "okay";
+};
+
+/* Spare serial header, pins 19 and 20. */
+&uart3 {
+	status = "okay";
+};
+
+/*
+ * Second card slot, pins 21, 22 and 24-27, detect on pin 29. The detect
+ * switch closes to ground with a card in; the pull-up makes a bare Pro Max
+ * read "no card" instead of probing an empty bus.
+ */
+&sdio {
+	max-frequency = <50000000>;
+	no-sdio;
+	no-mmc;
+	bus-width = <4>;
+	cap-sd-highspeed;
+	disable-wp;
+	no-1-8-v;
+	cd-gpios = <&gpio2 RK_PA6 GPIO_ACTIVE_LOW>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdmmc1m0_cmd &sdmmc1m0_clk &sdmmc1m0_bus4 &baseboard_card_det>;
+	status = "okay";
+};
+
+&pinctrl {
+	baseboard {
+		baseboard_card_det: baseboard-card-det {
+			rockchip,pins = <2 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+};
