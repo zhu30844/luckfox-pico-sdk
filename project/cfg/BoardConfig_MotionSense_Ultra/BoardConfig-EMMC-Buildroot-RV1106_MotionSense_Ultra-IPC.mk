@@ -22,8 +22,8 @@ export LF_ORIGIN_BOARD_CONFIG=BoardConfig-EMMC-Buildroot-RV1106_MotionSense_Ultr
 # Target CHIP
 export RK_CHIP=rv1106
 
-# Target APP
-export RK_APP_TYPE=RKIPC_RV1106
+# Target APP. Each app builds only for a name it knows, so this leaves rkipc out.
+export RK_APP_TYPE=MOTIONSENSE
 
 # CMA size
 export RK_BOOTARGS_CMA_SIZE="66M"
