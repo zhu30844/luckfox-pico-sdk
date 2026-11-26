@@ -27,7 +27,8 @@ export RK_KERNEL_DTS=rv1106g-motionsense-pro-max.dts
 #	BOOT_MEDIUM
 #################################################
 export RK_BOOT_MEDIUM=spi_nand
-export RK_UBOOT_DEFCONFIG_FRAGMENT=rk-sfc.config
+export RK_UBOOT_DEFCONFIG_FRAGMENT="rk-sfc.config rk-vendor-storage.config"
+export RK_KERNEL_DEFCONFIG_FRAGMENT=rv1106-vendor-storage.config
 
 #################################################
 #	PARTITION
@@ -37,7 +38,8 @@ export RK_UBOOT_DEFCONFIG_FRAGMENT=rk-sfc.config
 # boot, rootfs and oem sit between recovery and userdata, which must not move,
 # so an update could later resize those three against each other.
 # Nothing validates images against these sizes, so check after building.
-export RK_PARTITION_CMD_IN_ENV="256K(env),256K@256K(idblock),512K(uboot),512K(misc),8M(recovery),6M(boot),48M(rootfs),64M(oem),130560K(userdata)"
+# vnvm is Rockchip's vendor storage: the name is the one U-Boot and the kernel look for.
+export RK_PARTITION_CMD_IN_ENV="256K(env),256K@256K(idblock),512K(uboot),512K(misc),8M(recovery),6M(boot),48M(rootfs),65024K(oem),512K(vnvm),130560K(userdata)"
 export RK_PARTITION_FS_TYPE_CFG=rootfs@IGNORE@ubifs,oem@/oem@ubifs,userdata@/userdata@ubifs
 
 #################################################
