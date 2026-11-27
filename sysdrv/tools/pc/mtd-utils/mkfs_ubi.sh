@@ -25,6 +25,9 @@ UBI_FS_COMP=${6}
 PARAMETER=$7
 
 MKUBIFS_TOOL=mkfs.ubifs
+# Buildroot's own, where it was built (BR2_PACKAGE_HOST_MTD): the one beside this script is static and fakeroot does not reach it.
+BR_MKUBIFS=$(ls $SDK_ROOT_DIR/sysdrv/source/buildroot/*/output/host/sbin/mkfs.ubifs 2>/dev/null | head -n 1)
+[ -x "$BR_MKUBIFS" ] && MKUBIFS_TOOL=$BR_MKUBIFS
 MKUBINIZE_TOOL=ubinize
 MKSQUASHFS_TOOL=mksquashfs
 MKEROFS_TOOL=mkfs.erofs
