@@ -10,5 +10,8 @@ rm -fv "$R"/usr/bin/{v4l2-compliance,cec-ctl,cec-compliance}
 # Installed along with ssh-keygen, which sshd's start script needs.
 rm -fv "$R"/usr/bin/ssh-keyscan
 
-# usb0 has a fixed address (S51usbaddr); dhcpcd would add a link-local one.
+# The vendor's udev rule and its helper rebuild the vendor's USB gadget; ours is S50usbdevice.
+rm -fv "$R"/lib/udev/rules.d/61-usbdevice.rules "$R"/usr/bin/usbdevice
+
+# usb0 has a fixed address (ms-net); dhcpcd would add a link-local one.
 grep -qx 'denyinterfaces usb0' "$R/etc/dhcpcd.conf" || echo 'denyinterfaces usb0' >> "$R/etc/dhcpcd.conf"
