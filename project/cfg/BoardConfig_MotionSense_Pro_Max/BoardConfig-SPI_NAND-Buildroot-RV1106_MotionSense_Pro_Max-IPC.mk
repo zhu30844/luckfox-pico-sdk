@@ -95,8 +95,8 @@ export RK_ENABLE_SYSUTILS_TESTS=n
 #################################################
 # Our own oem trimming, so the vendor script stays shared-and-unmodified.
 export RK_PRE_BUILD_OEM_SCRIPT=motionsense-oem-pre.sh
-export RK_PRE_BUILD_USERDATA_SCRIPT=luckfox-userdata-pre.sh
+# Runs on the rootfs staging before the overlays.
+export RK_POST_BUILD_SCRIPT=motionsense-rootfs-post.sh
 
-# overlay-luckfox-* are symlinks into BoardConfig_IPC/overlay; post_overlay
-# resolves these against this directory and skips missing ones silently.
-export RK_POST_OVERLAY="overlay-luckfox-config overlay-luckfox-buildroot-init overlay-luckfox-buildroot-shadow overlay-motionsense"
+# No Luckfox overlay; post_overlay resolves names against overlay/ here.
+export RK_POST_OVERLAY="overlay-motionsense"
