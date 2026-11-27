@@ -10,24 +10,17 @@
 #           "Contents: read and write" on zhu30844/MotionSense only. Needed
 #           because GITHUB_TOKEN cannot write to another repository.
 #
-# Runners:  build jobs run on the self-hosted runners in the "runner" VM on
-#           the K12 (labels self-hosted,k12,<board>; one instance per board so
-#           each keeps its own tree), unless workflow_dispatch picks "github".
-#           Their workspace persists between runs, so a build is incremental:
-#           no git clean, no actions/cache, the toolchain image from the local
-#           Docker layer cache. A tag push builds from a clean tree (dl/ and
-#           .buildroot-ccache kept); workflow_dispatch can ask for one too.
-#           That VM is NAT-only and cannot reach the LAN, the tailnet or the
-#           PVE host. publish always runs GitHub-hosted, so the release token
-#           never reaches the K12.
+# Runners:  GitHub-hosted. The boards in the matrix build in parallel, each
+#           on its own runner.
 #
 # Environment: the build runs inside the image from .devcontainer/Dockerfile,
 # so CI and a local container build are the same toolchain, Go and cmake.
+# The image is built here with the GitHub Actions layer cache, which makes
+# it a ~30 s step after the first run.
 #
-# Caches (GitHub-hosted only): dl/ (buildroot tarballs, keyed on the
-#           defconfigs) and .buildroot-ccache (keyed per board, restored from
-#           the newest). Both resolve relative to the SDK root; see
-#           motionsense_defconfig.
+# Caches:   dl/ (buildroot tarballs, keyed on the defconfigs) and
+#           .buildroot-ccache (keyed per board, restored from the newest).
+#           Both resolve relative to the SDK root; see motionsense_defconfig.
 #
 # Actions are pinned to commit SHAs; the comment names the release.
 
@@ -37,29 +30,16 @@ on:
   push:
     tags: ['motionsense-v*']
   workflow_dispatch:
-    inputs:
-      runner:
-        description: Where to build
-        type: choice
-        options: [k12, github]
-        default: k12
-      clean:
-        description: "k12 only: wipe the build tree first (keeps dl/ and ccache)"
-        type: boolean
-        default: false
 
 permissions:
   contents: read
 
 env:
   IMAGE: luckfox-pico-sdk-dev:ci
-  # inputs.runner is empty on a tag push, which means k12
-  HOSTED: ${{ inputs.runner == 'github' }}
-  CLEAN: ${{ github.event_name == 'push' || inputs.clean }}
 
 jobs:
   build:
-    runs-on: ${{ inputs.runner == 'github' && 'ubuntu-latest' || fromJSON(format('["self-hosted","k12","{0}"]', matrix.runner)) }}
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     strategy:
       fail-fast: false
@@ -67,18 +47,14 @@ jobs:
         # One line per board. `board` is the directory under project/cfg/,
         # which must hold exactly one BoardConfig*.mk; `slug` names the
         # bundle. Keep slug in step with slug_for() in
-        # project/app/motionsense/scripts/mk-release.sh. `runner` is the
-        # label of that board's self-hosted runner instance.
+        # project/app/motionsense/scripts/mk-release.sh.
         include:
           - board: BoardConfig_MotionSense_Pro_Max
             slug: luckfox-pico-pro-max
-            runner: promax
           - board: BoardConfig_MotionSense_Ultra
             slug: luckfox-pico-ultra
-            runner: ultra
     steps:
       - name: Free disk space
-        if: env.HOSTED == 'true'
         # buildroot's output tree is ~20 GB; the hosted runner has ~14 GB
         # free until the preinstalled SDKs we do not use are removed.
         run: |
@@ -91,15 +67,6 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 1
-          # Self-hosted keeps its tree for incremental builds; see CLEAN
-          clean: ${{ env.HOSTED == 'true' }}
-
-      - name: Clean build tree
-        if: env.HOSTED != 'true' && env.CLEAN == 'true'
-        run: |
-          git clean -ffdxq -e /dl/ -e /.buildroot-ccache/
-          git submodule foreach --quiet --recursive git clean -ffdxq
-          df -h . | tail -1
 
       - name: Version
         id: ver
@@ -114,10 +81,8 @@ jobs:
           echo "app_sha=$(git rev-parse HEAD:project/app/motionsense)" >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-        if: env.HOSTED == 'true'
 
-      - name: Build toolchain image (GitHub-hosted, GHA layer cache)
-        if: env.HOSTED == 'true'
+      - name: Build toolchain image
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .devcontainer
@@ -129,14 +94,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build toolchain image (self-hosted, local layer cache)
-        if: env.HOSTED != 'true'
-        run: |
-          docker build -q -t "$IMAGE" --build-arg GO_VERSION=${{ steps.ver.outputs.go }} --build-arg NODE_VERSION=${{ steps.ver.outputs.node }} .devcontainer
-          docker image prune -f >/dev/null
-
       - name: Cache buildroot downloads
-        if: env.HOSTED == 'true'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: dl
@@ -144,7 +102,6 @@ jobs:
           restore-keys: br-dl-
 
       - name: Cache ccache
-        if: env.HOSTED == 'true'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .buildroot-ccache
@@ -160,22 +117,15 @@ jobs:
           echo "building $(readlink .BoardConfig.mk)"
 
       - name: Build firmware
-        # Self-hosted: both boards build at once on one 12-vCPU / 8 GB VM
-        env:
-          JOBS: ${{ env.HOSTED == 'true' && '0' || '6' }}
         run: |
-          [ "$JOBS" = 0 ] && JOBS=$(nproc)
           # Same path as the devcontainer: build output records absolute paths.
           docker run --rm -u "$(id -u):$(id -g)" \
             -v "$PWD:/workspaces/luckfox-pico-sdk" -w /workspaces/luckfox-pico-sdk \
-            -e HOME=/tmp -e LF_JOBS="$JOBS" \
+            -e HOME=/tmp -e LF_JOBS="$(nproc)" \
             -e MS_VERSION="${{ steps.ver.outputs.version }}" "$IMAGE" ./build.sh
 
       - name: Assemble release bundle
-        # The self-hosted tree persists: drop earlier bundles so only this
-        # run's is uploaded.
         run: |
-          rm -rf output/release
           docker run --rm -u "$(id -u):$(id -g)" \
             -v "$PWD:/workspaces/luckfox-pico-sdk" -w /workspaces/luckfox-pico-sdk \
             -e HOME=/tmp "$IMAGE" \
